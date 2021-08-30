@@ -1,0 +1,141 @@
+import torch
+import numpy as np
+import pandas as pd
+
+from PIL import Image
+from torch.utils.data import Dataset
+from torchvision import transforms
+from torchvision.transforms import *
+
+IMG_EXTENSIONS = [
+    ".jpg", ".JPG", ".jpeg", ".JPEG", ".png",
+    ".PNG", ".ppm", ".PPM", ".bmp", ".BMP",
+]
+
+
+def is_image_file(filename):
+    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
+
+class BaseAugmentation:
+    def __init__(self, resize, mean, std, **args):
+        self.transform = transforms.Compose([
+            Resize(resize, Image.BILINEAR),
+            ToTensor(),
+            Normalize(mean=mean, std=std),
+        ])
+
+    def __call__(self, image):
+        return self.transform(image)
+
+
+class AddGaussianNoise(object):
+    """
+        transform 에 없는 기능들은 이런식으로 __init__, __call__, __repr__ 부분을
+        직접 구현하여 사용할 수 있습니다.
+    """
+
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+
+class TrainAugmentation:
+    def __init__(self, resize, mean, std, **args):
+        self.transform = transforms.Compose([
+            Resize(resize, Image.BILINEAR),
+            RandomChoice([ColorJitter(brightness=(0.2, 3)),
+                         ColorJitter(contrast=(0.2, 3)),
+                         ColorJitter(saturation=(0.2, 3)),
+                         ColorJitter(hue=(-0.3, 0.3))]),
+            RandomHorizontalFlip(p=0.5),
+            ToTensor(),
+            Normalize(mean=mean, std=std),
+        ])
+
+    def __call__(self, image):
+        return self.transform(image)
+
+
+class TrainDataset(Dataset):
+    def __init__(self, train_df_path, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
+        self.mean = mean
+        self.std = std
+        self.train_df = pd.read_csv(train_df_path)
+        self.transform = None
+
+    def set_transform(self, transform):
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.train_df)
+
+    def __getitem__(self, index):
+        assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+
+        path = self.train_df.path.iloc[index]
+        image = Image.open(path).convert('RGB')
+        image_transform = self.transform(image)
+        label = self.train_df.label.iloc[index]
+        return image_transform, torch.tensor(label)
+
+
+class ValidDataset(Dataset):
+    def __init__(self, valid_df_path, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
+        self.mean = mean
+        self.std = std
+        self.valid_df = pd.read_csv(valid_df_path)
+        self.transform = None
+
+    def set_transform(self, transform):
+        self.transform = transform
+
+    @staticmethod
+    def denormalize_image(image, mean, std):
+        img_cp = image.copy()
+        img_cp *= std
+        img_cp += mean
+        img_cp *= 255.0
+        img_cp = np.clip(img_cp, 0, 255).astype(np.uint8)
+        return img_cp
+
+    @staticmethod
+    def decode_multi_class(multi_class_label):
+        mask_label = (multi_class_label // 6) % 3
+        gender_label = (multi_class_label // 3) % 2
+        age_label = multi_class_label % 3
+        return mask_label, gender_label, age_label
+
+    def __len__(self):
+        return len(self.valid_df)
+
+    def __getitem__(self, index):
+        assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+
+        path = self.valid_df.path.iloc[index]
+        image = Image.open(path).convert('RGB')
+        image_transform = self.transform(image)
+        label = self.valid_df.label.iloc[index]
+        return image_transform, torch.tensor(label)
+
+class TestDataset(Dataset):
+    def __init__(self, test_df_path, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
+        self.mean = mean
+        self.std = std
+        self.test_df = pd.read_csv(test_df_path)
+        self.transform = None
+
+    def __len__(self):
+        return len(self.test_df)
+
+    def __getitem__(self, index):
+        image = Image.open(self.img_paths[index].convert('RGB'))
+        if self.transform:
+            image = self.transform(image)
+        return image
