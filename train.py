@@ -337,11 +337,13 @@ def train(model_dir, args):
             best_valid_f1 = max(best_valid_f1, valid_item[2])
             cur_f1 = valid_item[2]
 
-            if cur_f1 > best_valid_f1:
-                print(f"New best model for valid f1 : {cur_f1:.5%}! saving the best model..")
-                torch.save(model.module.state_dict(), f"{save_dir}/best_{cur_f1}.pth")
-                best_valid_f1 = cur_f1
-            torch.save(model.module.state_dict(), f"{save_dir}/last_{cur_f1}.pth")
+            if cur_f1 >= 0.7:
+                if cur_f1 > best_valid_f1:
+                    print(f"New best model for valid f1 : {cur_f1:.5%}! saving the best model..")
+                    torch.save(model.module.state_dict(), f"{save_dir}/best_{cur_f1:.4f}.pth")
+                    best_valid_f1 = cur_f1
+                else:
+                    torch.save(model.module.state_dict(), f"{save_dir}/last_{cur_f1:.4f}.pth")
 
             print(
                 f"[Train] f1 : {train_item[2]:.5}, best f1 : {best_train_f1:.5} || " 

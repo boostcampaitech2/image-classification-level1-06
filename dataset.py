@@ -77,7 +77,7 @@ class TrainDataset(Dataset):
         return len(self.train_df)
 
     def __getitem__(self, index):
-        assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+        assert self.transform is not None, "[train_dataset] : .set_tranform 메소드를 이용하여 transform 을 주입해주세요"
 
         path = self.train_df.path.iloc[index]
         image = Image.open(path).convert('RGB')
@@ -116,7 +116,7 @@ class ValidDataset(Dataset):
         return len(self.valid_df)
 
     def __getitem__(self, index):
-        assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+        assert self.transform is not None, "[valid_dataset] : .set_tranform 메소드를 이용하여 transform 을 주입해주세요"
 
         path = self.valid_df.path.iloc[index]
         image = Image.open(path).convert('RGB')
@@ -125,17 +125,20 @@ class ValidDataset(Dataset):
         return image_transform, torch.tensor(label)
 
 class TestDataset(Dataset):
-    def __init__(self, test_df_path, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
-        self.mean = mean
-        self.std = std
-        self.test_df = pd.read_csv(test_df_path)
-        self.transform = None
+    def __init__(self, image_path, resize, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
+        self.path = image_path
+        self.transform = transforms.Compose([
+            Resize(resize, Image.BILINEAR),
+            ToTensor(),
+            Normalize(mean=mean, std=std),
+        ])
 
     def __len__(self):
-        return len(self.test_df)
+        return len(self.path)
 
     def __getitem__(self, index):
-        image = Image.open(self.img_paths[index].convert('RGB'))
-        if self.transform:
-            image = self.transform(image)
+        assert self.transform is not None, "[test_dataset] : .set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+
+        image = Image.open(self.path[index]).convert('RGB')
+        image = self.transform(image)
         return image
