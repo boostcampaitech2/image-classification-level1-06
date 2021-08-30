@@ -269,6 +269,7 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
+                f'Epoch #{epoch:2f}\n'
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
@@ -343,12 +344,12 @@ def train(model_dir, args):
             torch.save(model.module.state_dict(), f"{save_dir}/last_{cur_f1}.pth")
 
             print(
-                f"[Train]f1 : {train_item[2]:.5}, best f1 : {best_train_f1:.5} || " 
+                f"[Train] f1 : {train_item[2]:.5}, best f1 : {best_train_f1:.5} || " 
                 f"acc : {train_item[1]:.5%}, best acc: {best_train_acc:.5%} || "
                 f"loss : {train_item[0]:.5}, best loss: {best_train_loss:.5} || "
             )
             print(
-                f"[Valid]f1 : {valid_item[2]:.5}, best f1 : {best_valid_f1:.5} || "
+                f"[Valid] f1 : {valid_item[2]:.5}, best f1 : {best_valid_f1:.5} || "
                 f"acc : {valid_item[1]:.5%}, best acc: {best_valid_acc:.5%} || "
                 f"loss : {valid_item[0]:.5}, best loss: {best_valid_loss:.5} || "
             )
