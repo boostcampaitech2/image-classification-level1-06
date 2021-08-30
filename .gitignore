@@ -1,7 +1,14 @@
 # ETC
+.*
 .idea
 key
+*.csv
 sample_submission.ipynb
+code/
+input/
+model/
+output/
+submission/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
