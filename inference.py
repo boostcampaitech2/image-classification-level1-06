@@ -169,9 +169,9 @@ if __name__ == '__main__':
 
     os.makedirs(output_dir, exist_ok=True)
 
-    assert args.pth_name, "적용하고자 하는 모델 파라미터를 입력해주세요"
+    assert args.pth_name, "적용하고자 하는 모델 파라미터를 입력해주세요. cross_validation 시에는 best 로만 입력해 주세요"
     assert args.output_name, "output 이름을 입력해주세요"
-    assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요."
+    assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요. cross_validation 시에는 train 시 model_name 과 동일"
     if args.cv:
         cv_inference(data_dir, model_dir, output_dir, args)
     else:
