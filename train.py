@@ -119,7 +119,7 @@ def train(model_dir, args):
 
     # -- dataset
     if args.data_changed:
-        data = pd.read_csv('./input/data/train/train.csv')
+        data = pd.read_csv('opt/ml/input/data/train/train.csv')
         data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
         data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
         data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
