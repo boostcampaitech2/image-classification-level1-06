@@ -208,8 +208,8 @@ def train(model_dir, args):
     )
     scheduler = CyclicLR(
         optimizer,
-        base_lr=args.lr,
-        max_lr=1e-6,
+        base_lr=1e-6,
+        max_lr=args.lr,
         step_size_down=len(train_dataset) * 2 // args.batch_size,
         step_size_up=len(train_dataset) // args.batch_size,
         cycle_momentum=False,
@@ -269,7 +269,7 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
-                f'Epoch #{epoch:2f}\n'
+                f'Epoch #{epoch:2.f}'
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
@@ -338,7 +338,7 @@ def train(model_dir, args):
             cur_f1 = valid_item[2]
 
             if cur_f1 >= 0.7:
-                if cur_f1 > best_valid_f1:
+                if cur_f1 == best_valid_f1:
                     print(f"New best model for valid f1 : {cur_f1:.5%}! saving the best model..")
                     torch.save(model.module.state_dict(), f"{save_dir}/best_{cur_f1:.4f}.pth")
                     best_valid_f1 = cur_f1
@@ -356,9 +356,9 @@ def train(model_dir, args):
                 f"loss : {valid_item[0]:.5}, best loss: {best_valid_loss:.5} || "
             )
 
-            logger.add_scalar("Val/loss", valid_item[2], epoch)
+            logger.add_scalar("Val/loss", valid_item[0], epoch)
             logger.add_scalar("Val/accuracy", valid_item[1], epoch)
-            logger.add_scalar("Val/f1-score", valid_item[0], epoch)
+            logger.add_scalar("Val/f1-score", valid_item[2], epoch)
             logger.add_figure("results", figure, epoch)
             print()
 
