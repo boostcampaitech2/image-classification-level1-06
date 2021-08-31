@@ -374,6 +374,7 @@ def train(model_dir, args):
     # -- dataset
     if args.data_changed:
         data = pd.read_csv('/opt/ml/input/data/train/train.csv')
+        data = pd.read_csv('opt/ml/input/data/train/train.csv')
         data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
         data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
         data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
@@ -526,7 +527,7 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
-                f'Epoch #{epoch:2.0f} | '
+                f'Epoch #{epoch:2.f}'
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
