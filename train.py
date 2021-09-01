@@ -649,7 +649,7 @@ if __name__ == '__main__':
     parser.add_argument('--valid_batch_size', type=int, default=120, help='input batch size for validing (default: 120)')
     parser.add_argument('--model', type=str, default='Model', help='model class (default: BaseModel)')
     parser.add_argument('--model_name', type=str, default='efficientnet_b4', help='what kinds of models (default: efficientnet_b4)')
-    parser.add_argument('--optimizer', type=str, default='symmetric', help='optimizer type (default: symmetric)')
+    parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='symmetric', help='criterion type (default: symmetric)')
