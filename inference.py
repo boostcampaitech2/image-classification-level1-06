@@ -1,7 +1,9 @@
 import argparse
 import os
+import glob
 from importlib import import_module
 
+import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -21,6 +23,25 @@ def load_model(model_name, pth_name, saved_model, num_classes, device):
     # tar.extractall(path=saved_model)
 
     model_path = os.path.join(saved_model, pth_name)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+
+    return model
+
+
+def cv_load_model(model_name, pth_name, saved_model, num_classes, device):
+    model_cls = getattr(import_module("model"), args.model)
+    model = model_cls(
+        model_arch=model_name,
+        num_classes=num_classes
+    )
+
+    # tarpath = os.path.join(saved_model, 'best.tar.gz')
+    # tar = tarfile.open(tarpath, 'r:gz')
+    # tar.extractall(path=saved_model)
+    best_cktp_list = sorted(glob.glob(os.path.join(saved_model, pth_name) + '*'))
+    if len(best_cktp_list) == 0:
+        return
+    model_path = best_cktp_list[-1]
     model.load_state_dict(torch.load(model_path, map_location=device))
 
     return model
@@ -68,6 +89,61 @@ def inference(data_dir, model_dir, output_dir, args):
     print(f'Inference Done!')
 
 
+@torch.no_grad()
+def cv_inference(data_dir, model_dir, output_dir, args):
+    """
+    """
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    num_classes = 18
+
+    fold_preds_list = []
+    model_dir_list = sorted(glob.glob(model_dir + '*'))
+    for model_dir in model_dir_list:
+        model = cv_load_model(args.model_name, args.pth_name, model_dir, num_classes, device)
+        if model is None:
+            continue
+        model = model.to(device)
+        model.eval()
+
+        img_root = os.path.join(data_dir, 'faces')
+        info_path = os.path.join(data_dir, 'info.csv')
+        info = pd.read_csv(info_path)
+
+        img_paths = [os.path.join(img_root, img_id) for img_id in info.ImageID]
+        test_dataset = TestDataset(img_paths, args.resize)
+
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=args.batch_size,
+            num_workers=4,
+            shuffle=False,
+            pin_memory=use_cuda,
+            drop_last=False,
+        )
+
+        print("Calculating inference results..")
+        preds = []
+        with torch.no_grad():
+            pbar = tqdm(test_loader)
+            for idx, images in enumerate(pbar):
+                images = images.to(device)
+                pred = model(images)
+                # pred = pred.argmax(dim=-1)
+                preds.extend(pred.cpu().numpy())
+
+        fold_preds_list.append(np.array(preds))
+
+    fold_preds = np.zeros_like(fold_preds_list[0])
+    for preds in fold_preds_list:
+        fold_preds += preds
+    fold_preds = np.argmax(fold_preds, -1)
+    info['ans'] = fold_preds
+    info.to_csv(os.path.join(output_dir, f'output_{args.output_name}.csv'), index=False)
+    print(f'Inference Done!')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -77,11 +153,13 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='Model', help='model type (default: BaseModel)')
     parser.add_argument('--model_name', type=str, default='efficientnet_b4', help='what kinds of models (default: efficientnet_b4)')
     parser.add_argument('--pth_name', type=str, default='', help='which pth you will use (not optional)')
+    parser.add_argument('--output_name', type=str, default='', help='output name (not optional)')
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_EVAL', '/opt/ml/input/data/eval'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_CHANNEL_MODEL', ''))
     parser.add_argument('--output_dir', type=str, default=os.environ.get('SM_OUTPUT_DATA_DIR', './output'))
+    parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
 
     args = parser.parse_args()
 
@@ -91,6 +169,10 @@ if __name__ == '__main__':
 
     os.makedirs(output_dir, exist_ok=True)
 
-    assert args.pth_name, "적용하고자 하는 모델 파라미터를 입력해주세요"
-    assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요."
-    inference(data_dir, model_dir, output_dir, args)
+    assert args.pth_name, "적용하고자 하는 모델 파라미터를 입력해주세요. cross_validation 시에는 best 로만 입력해 주세요"
+    assert args.output_name, "output 이름을 입력해주세요"
+    assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요. cross_validation 시에는 train 시 name 과 동일"
+    if args.cv:
+        cv_inference(data_dir, model_dir, output_dir, args)
+    else:
+        inference(data_dir, model_dir, output_dir, args)
