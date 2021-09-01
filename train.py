@@ -648,7 +648,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
-    parser.add_argument('--criterion', type=str, default='cross_entropy', help='criterion type (default: cross_entropy)')
+    parser.add_argument('--criterion', type=str, default='symmetric', help='criterion type (default: symmetric)')
     parser.add_argument('--cutmix', type=float, default='0.5', help='cutmix ratio (if ratio is 0, not cutmix)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=21, help='how many batches to wait before logging training status')
