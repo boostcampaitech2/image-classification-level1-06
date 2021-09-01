@@ -117,8 +117,10 @@ def get_perfect_df():
     return perfect_df, sub_label_df
 
 
-def cross_validation(model_dir, args, perfect_df, sub_label_df, k_folds=5):
+def cross_validation(model_dir, args, k_folds=5):
     seed_everything(args.seed)
+
+    perfect_df, sub_label_df = get_perfect_df()
 
     fold_valid_f1_list = []
     skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=args.seed)
@@ -146,12 +148,12 @@ def cv_train(model_dir, args, train_df, valid_df):
     num_classes = 18
 
     # -- dataset
-    train_dataset_module = getattr(import_module("dataset"), 'CVTrainDataset')
+    train_dataset_module = getattr(import_module("dataset"), 'TrainDataset')
     train_dataset = train_dataset_module(
         train_df=train_df
     )
 
-    valid_dataset_module = getattr(import_module("dataset"), 'CVValidDataset')
+    valid_dataset_module = getattr(import_module("dataset"), 'ValidDataset')
     valid_dataset = valid_dataset_module(
         valid_df=valid_df
     )
@@ -386,42 +388,24 @@ def train(model_dir, args):
     num_classes = 18
 
     # -- dataset
-    if args.data_changed:
-        data = pd.read_csv('/opt/ml/input/data/train/train.csv')
-        data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
-        data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
-        data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
-        train_df, valid_df = train_test_split(data, test_size=args.val_ratio, shuffle=True,
-                                              stratify=data['sub_label'], random_state=args.seed)
-        df = []
-        train_df.apply(lambda x : labeling(x, df), axis=1)
-        train_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
 
-        df = []
-        valid_df.apply(lambda x: labeling(x, df), axis=1)
-        valid_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
+    perfect_df, sub_label_df = get_perfect_df()
+    sub_train_df, sub_valid_df = train_test_split(sub_label_df, test_size=0.2,
+                                                  stratify=sub_label_df.sub_label, random_state=args.seed)
+    train_people_path = sub_train_df.people_path.tolist()
+    valid_people_path = sub_valid_df.people_path.tolist()
 
-        train_df.to_csv(args.train_df, index=False)
-        valid_df.to_csv(args.valid_df, index=False)
-
-        img_stats = get_img_stats(train_df.path.values)
-        mean = np.mean(img_stats["means"], axis=0) / 255.
-        std = np.mean(img_stats["stds"], axis=0) / 255.
+    train_df = perfect_df[perfect_df['people_path'].isin(train_people_path)]
+    valid_df = perfect_df[perfect_df['people_path'].isin(valid_people_path)]
 
     train_dataset_module = getattr(import_module("dataset"), 'TrainDataset')
     train_dataset = train_dataset_module(
-        train_df_path=args.train_df
+        train_df=train_df
     )
-    if args.data_changed:
-        train_dataset.mean = mean
-        train_dataset.std = std
-    else:
-        train_dataset.mean = [0.53289308, 0.48537505, 0.45752197]
-        train_dataset.std = [0.23708445, 0.24326335, 0.25118391]
 
     valid_dataset_module = getattr(import_module("dataset"), 'ValidDataset')
     valid_dataset = valid_dataset_module(
-        valid_df_path=args.valid_df
+        valid_df=valid_df
     )
 
     # -- augmentation
@@ -679,8 +663,6 @@ if __name__ == '__main__':
                         help='csv file path of train data')
     parser.add_argument('--valid_df', type=str, default="/opt/ml/valid_stratified_face.csv",
                         help='csv file path of validation data')
-    parser.add_argument('--data_changed', type=bool, default=False,
-                        help='change data and settings (default: False)')
     parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/faces'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
@@ -692,7 +674,6 @@ if __name__ == '__main__':
     model_dir = args.model_dir
 
     if args.cv:
-        perfect_df, sub_label_df = get_perfect_df()
-        cross_validation(model_dir, args, perfect_df, sub_label_df, 5)
+        cross_validation(model_dir, args, 5)
     else:
         train(model_dir, args)
