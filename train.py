@@ -119,7 +119,7 @@ def train(model_dir, args):
 
     # -- dataset
     if args.data_changed:
-        data = pd.read_csv('./input/data/train/train.csv')
+        data = pd.read_csv('opt/ml/input/data/train/train.csv')
         data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
         data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
         data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
@@ -199,7 +199,14 @@ def train(model_dir, args):
     model = torch.nn.DataParallel(model)
 
     # -- loss & metric
-    criterion = create_criterion(args.criterion)  # default: cross_entropy
+    if args.criterion == 'weight_cross_entropy':
+        criterion = create_criterion(args.criterion,
+                                     weight=torch.FloatTensor([0.855, 0.892, 0.978, 0.806, 0.784, 0.971,
+                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994,
+                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994]).to(device),
+                                     reduction='mean')
+    else:
+        criterion = create_criterion(args.criterion)  # default: cross_entropy
     opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Cyclic
     optimizer = opt_module(
         filter(lambda p: p.requires_grad, model.parameters()),
@@ -208,8 +215,8 @@ def train(model_dir, args):
     )
     scheduler = CyclicLR(
         optimizer,
-        base_lr=args.lr,
-        max_lr=1e-6,
+        base_lr=1e-6,
+        max_lr=args.lr,
         step_size_down=len(train_dataset) * 2 // args.batch_size,
         step_size_up=len(train_dataset) // args.batch_size,
         cycle_momentum=False,
@@ -269,7 +276,7 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
-                f'Epoch #{epoch:2f}\n'
+                f'Epoch #{epoch:2f}'
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
@@ -338,7 +345,7 @@ def train(model_dir, args):
             cur_f1 = valid_item[2]
 
             if cur_f1 >= 0.7:
-                if cur_f1 > best_valid_f1:
+                if cur_f1 == best_valid_f1:
                     print(f"New best model for valid f1 : {cur_f1:.5%}! saving the best model..")
                     torch.save(model.module.state_dict(), f"{save_dir}/best_{cur_f1:.4f}.pth")
                     best_valid_f1 = cur_f1
@@ -356,9 +363,9 @@ def train(model_dir, args):
                 f"loss : {valid_item[0]:.5}, best loss: {best_valid_loss:.5} || "
             )
 
-            logger.add_scalar("Val/loss", valid_item[2], epoch)
+            logger.add_scalar("Val/loss", valid_item[0], epoch)
             logger.add_scalar("Val/accuracy", valid_item[1], epoch)
-            logger.add_scalar("Val/f1-score", valid_item[0], epoch)
+            logger.add_scalar("Val/f1-score", valid_item[2], epoch)
             logger.add_figure("results", figure, epoch)
             print()
 
@@ -380,7 +387,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='Model', help='model class (default: BaseModel)')
     parser.add_argument('--model_name', type=str, default='efficientnet_b4', help='what kinds of models (default: efficientnet_b4)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
-    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate (default: 1e-3)')
+    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='cross_entropy', help='criterion type (default: cross_entropy)')
     parser.add_argument('--cutmix', type=float, default='0.5', help='cutmix ratio (if ratio is 0, not cutmix)')
