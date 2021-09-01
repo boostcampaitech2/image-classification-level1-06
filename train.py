@@ -23,6 +23,8 @@ from tqdm import tqdm
 from dataset import ValidDataset
 from loss import create_criterion
 
+from cawr import CustomCosineAnnealingWarmUpRestarts
+
 
 def seed_everything(seed):
     torch.manual_seed(seed)
@@ -119,7 +121,7 @@ def train(model_dir, args):
 
     # -- dataset
     if args.data_changed:
-        data = pd.read_csv('./input/data/train/train.csv')
+        data = pd.read_csv('opt/ml/input/data/train/train.csv')
         data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
         data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
         data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
@@ -206,14 +208,24 @@ def train(model_dir, args):
         lr=args.lr,
         # weight_decay=5e-4,
     )
-    scheduler = CyclicLR(
-        optimizer,
-        base_lr=args.lr,
-        max_lr=1e-6,
-        step_size_down=len(train_dataset) * 2 // args.batch_size,
-        step_size_up=len(train_dataset) // args.batch_size,
-        cycle_momentum=False,
-        mode="triangular2")
+    if args.scheduler == 'StepLR':
+        scheduler = StepLR(optimizer, args.lr_decay_step,gamma=0.5)
+    elif args.scheduler == 'CosineAnnealingLR':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max = args.epochs)
+    elif args.scheduler == 'CosineAnnealingWarmingRestarts':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=2, T_mult=1, eta_min=0.001, last_epoch=-1)
+    elif args.scheduler == 'CyclicLR':
+        scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=1e-6, max_lr=args.lr, step_size_up=len(train_dataset)// args.batch_size, step_size_down=len(train_dataset) * 2 // args.batch_size,cycle_momentum=False, mode='triangular2')
+    else:
+        raise ValueError
+    # scheduler = CyclicLR(
+    #     optimizer,
+    #     base_lr=args.lr,
+    #     max_lr=1e-6,
+    #     step_size_down=len(train_dataset) * 2 // args.batch_size,
+    #     step_size_up=len(train_dataset) // args.batch_size,
+    #     cycle_momentum=False,
+    #     mode="triangular2")
     # scheduler = StepLR(optimizer, args.lr_decay_step, gamma=0.5)
 
     # -- logging
@@ -269,7 +281,7 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
-                f'Epoch #{epoch:2f}\n'
+                f'Epoch #{epoch:2.0f} ' 
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
@@ -337,8 +349,8 @@ def train(model_dir, args):
             best_valid_f1 = max(best_valid_f1, valid_item[2])
             cur_f1 = valid_item[2]
 
-            if cur_f1 >= 0.7:
-                if cur_f1 > best_valid_f1:
+            if cur_f1 >= 0.1:
+                if cur_f1 == best_valid_f1:
                     print(f"New best model for valid f1 : {cur_f1:.5%}! saving the best model..")
                     torch.save(model.module.state_dict(), f"{save_dir}/best_{cur_f1:.4f}.pth")
                     best_valid_f1 = cur_f1
@@ -356,9 +368,9 @@ def train(model_dir, args):
                 f"loss : {valid_item[0]:.5}, best loss: {best_valid_loss:.5} || "
             )
 
-            logger.add_scalar("Val/loss", valid_item[2], epoch)
+            logger.add_scalar("Val/loss", valid_item[0], epoch)
             logger.add_scalar("Val/accuracy", valid_item[1], epoch)
-            logger.add_scalar("Val/f1-score", valid_item[0], epoch)
+            logger.add_scalar("Val/f1-score", valid_item[2], epoch)
             logger.add_figure("results", figure, epoch)
             print()
 
@@ -371,28 +383,40 @@ if __name__ == '__main__':
     load_dotenv(verbose=True)
 
     # Data and model checkpoints directories
-    parser.add_argument('--seed', type=int, default=2021, help='random seed (default: 42)')
+    parser.add_argument('--seed', type=int, default=2021, help='random seed (default: 2021)')
     parser.add_argument('--epochs', type=int, default=24, help='number of epochs to train (default: 1)')
     parser.add_argument('--augmentation', type=str, default='TrainAugmentation', help='data augmentation type (default: CustomAugmentation)')
     parser.add_argument("--resize", nargs="+", type=list, default=[280, 210], help='resize size for image when training')
-    parser.add_argument('--batch_size', type=int, default=30, help='input batch size for training (default: 30)')
-    parser.add_argument('--valid_batch_size', type=int, default=120, help='input batch size for validing (default: 120)')
+    parser.add_argument('--batch_size', type=int, default=64, help='input batch size for training (default: 30)')
+    parser.add_argument('--valid_batch_size', type=int, default=100, help='input batch size for validing (default: 64)')
     parser.add_argument('--model', type=str, default='Model', help='model class (default: BaseModel)')
     parser.add_argument('--model_name', type=str, default='efficientnet_b4', help='what kinds of models (default: efficientnet_b4)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
-    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate (default: 1e-3)')
+    parser.add_argument('--scheduler', type=str, default='CyclicLR', help='scheduler (default : StepLr)')
+    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='cross_entropy', help='criterion type (default: cross_entropy)')
-    parser.add_argument('--cutmix', type=float, default='0.5', help='cutmix ratio (if ratio is 0, not cutmix)')
-    parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
+    parser.add_argument('--cutmix', type=float, default='0.2', help='cutmix ratio (if ratio is 0, not cutmix)')
+    parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=21, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='experiment', help='model save at {SM_MODEL_DIR}/{name}')
 
     # Container environment
-    parser.add_argument('--train_df', type=str, default="/opt/ml/train_stratified_face.csv",
+    # parser.add_argument('--train_df', type=str, default="/opt/ml/train_stratified_face.csv",
+    #                     help='csv file path of train data')
+    # parser.add_argument('--valid_df', type=str, default="/opt/ml/valid_stratified_face.csv",
+    #                     help='csv file path of validation data')
+
+    # parser.add_argument('--train_df', type=str, default="/opt/ml/hot6/image-classification-level1-06/train_stratified_face.csv",
+    #                     help='csv file path of train data')
+    # parser.add_argument('--valid_df', type=str, default="/opt/ml/hot6/image-classification-level1-06/valid_stratified_face.csv",
+    #                     help='csv file path of validation data')
+
+    parser.add_argument('--train_df', type=str, default="/opt/ml/hot6/image-classification-level1-06/new_train.csv",
                         help='csv file path of train data')
-    parser.add_argument('--valid_df', type=str, default="/opt/ml/valid_stratified_face.csv",
+    parser.add_argument('--valid_df', type=str, default="/opt/ml/hot6/image-classification-level1-06/new_valid.csv",
                         help='csv file path of validation data')
+
     parser.add_argument('--data_changed', type=bool, default=False,
                         help='change data and settings (default: False)')
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/faces'))
