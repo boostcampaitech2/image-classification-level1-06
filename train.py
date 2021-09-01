@@ -10,7 +10,7 @@ from glob import glob
 from importlib import import_module
 from pathlib import Path
 from sklearn.metrics import f1_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -100,16 +100,30 @@ def labeling(x, df):
 
 def get_img_stats(img_paths):
     img_info = dict(means=[], stds=[])
-    for img_path in img_paths:
+    for img_path in tqdm(img_paths):
         img = np.array(Image.open(glob(img_path)[0]).convert('RGB'))
         img_info['means'].append(img.mean(axis=(0,1)))
         img_info['stds'].append(img.std(axis=(0,1)))
     return img_info
 
 
-def train(model_dir, args):
+def cross_validation(model_dir, args, df, k_folds=5):
     seed_everything(args.seed)
 
+    fold_valid_f1_list = []
+    skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=args.seed)
+    for n_iter, (train_idx, valid_idx) in enumerate(skf.split(df, df.sub_label), start=1):
+        print(f'>> Cross Validation {n_iter} Starts!')
+        train_df, valid_df = df.iloc[train_idx].reset_index(drop=True), df.iloc[valid_idx].reset_index(drop=True)
+
+        best_valid_f1 = cv_train(model_dir, args, train_df, valid_df)
+        fold_valid_f1_list.append(best_valid_f1)
+
+    print('>> Cross Validation Finish')
+    print(f'CV F1-Score: {np.mean(fold_valid_f1_list)}')
+
+
+def cv_train(model_dir, args, train_df, valid_df):
     save_dir = increment_path(os.path.join(model_dir, args.name))
 
     # -- settings
@@ -118,39 +132,22 @@ def train(model_dir, args):
     num_classes = 18
 
     # -- dataset
-    if args.data_changed:
-        data = pd.read_csv('opt/ml/input/data/train/train.csv')
-        data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
-        data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
-        data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
-        train_df, valid_df = train_test_split(data, test_size=args.val_ratio, shuffle=True,
-                                              stratify=data['sub_label'], random_state=args.seed)
-        df = []
-        train_df.apply(lambda x : labeling(x, df), axis=1)
-        train_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
+    df = []
+    train_df.apply(lambda x: labeling(x, df), axis=1)
+    train_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
 
-        df = []
-        valid_df.apply(lambda x: labeling(x, df), axis=1)
-        valid_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
+    df = []
+    valid_df.apply(lambda x: labeling(x, df), axis=1)
+    valid_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
 
-        train_df.to_csv(args.train_df, index=False)
-        valid_df.to_csv(args.valid_df, index=False)
-
-        img_stats = get_img_stats(train_df.path.values)
-        mean = np.mean(img_stats["means"], axis=0) / 255.
-        std = np.mean(img_stats["stds"], axis=0) / 255.
-
-    train_dataset_module = getattr(import_module("dataset"), 'TrainDataset')
+    train_dataset_module = getattr(import_module("dataset"), 'CVTrainDataset')
     train_dataset = train_dataset_module(
-        train_df_path=args.train_df
+        train_df=train_df
     )
-    if args.data_changed:
-        train_dataset.mean = mean
-        train_dataset.std = std
 
-    valid_dataset_module = getattr(import_module("dataset"), 'ValidDataset')
+    valid_dataset_module = getattr(import_module("dataset"), 'CVValidDataset')
     valid_dataset = valid_dataset_module(
-        valid_df_path=args.valid_df
+        valid_df=valid_df
     )
 
     # -- augmentation
@@ -170,12 +167,11 @@ def train(model_dir, args):
     )
     valid_dataset.set_transform(transform)
 
-
     # -- data_loader
     train_loader = DataLoader(
         dataset=train_dataset,
         batch_size=args.batch_size,
-        num_workers=multiprocessing.cpu_count()//2,
+        num_workers=multiprocessing.cpu_count() // 2,
         shuffle=True,
         pin_memory=use_cuda,
         drop_last=True,
@@ -184,7 +180,7 @@ def train(model_dir, args):
     valid_loader = DataLoader(
         dataset=valid_dataset,
         batch_size=args.valid_batch_size,
-        num_workers=multiprocessing.cpu_count()//2,
+        num_workers=multiprocessing.cpu_count() // 2,
         shuffle=False,
         pin_memory=use_cuda,
         drop_last=True,
@@ -199,15 +195,8 @@ def train(model_dir, args):
     model = torch.nn.DataParallel(model)
 
     # -- loss & metric
-    if args.criterion == 'weight_cross_entropy':
-        criterion = create_criterion(args.criterion,
-                                     weight=torch.FloatTensor([0.855, 0.892, 0.978, 0.806, 0.784, 0.971,
-                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994,
-                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994]).to(device),
-                                     reduction='mean')
-    else:
-        criterion = create_criterion(args.criterion)  # default: cross_entropy
-    opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Cyclic
+    criterion = create_criterion(args.criterion)  # default: cross_entropy
+    opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Adam
     optimizer = opt_module(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr,
@@ -276,7 +265,277 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
-                f'Epoch #{epoch:2.f}'
+                f'Epoch #{epoch:2.0f} | '
+                f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
+                f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
+            )
+
+            if (idx + 1) % args.log_interval == 0:
+                train_loss = sum(train_batch_loss[idx - args.log_interval:idx]) / args.log_interval
+                train_acc = sum(train_batch_accuracy[idx - args.log_interval:idx]) / args.log_interval
+                train_f1 = sum(train_batch_f1[idx - args.log_interval:idx]) / args.log_interval
+
+                logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
+                logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
+                logger.add_scalar("Train/f1-score", train_f1, epoch * len(train_loader) + idx)
+                logger.add_scalar("Train/learing_rate", get_lr(optimizer), epoch * len(train_loader) + idx)
+            scheduler.step()
+
+        train_item = (sum(train_batch_loss) / len(train_loader),
+                      sum(train_batch_accuracy) / len(train_loader),
+                      sum(train_batch_f1) / len(train_loader))
+        best_train_loss = min(best_train_loss, train_item[0])
+        best_train_acc = max(best_train_acc, train_item[1])
+        best_train_f1 = max(best_train_f1, train_item[2])
+
+        # val loop
+        with torch.no_grad():
+            model.eval()
+            valid_batch_loss = []
+            valid_batch_accuracy = []
+            valid_batch_f1 = []
+            figure = None
+            pbar = tqdm(valid_loader, total=len(valid_loader))
+            for (inputs, labels) in pbar:
+                inputs, labels = inputs.to(device), labels.to(device)
+
+                outs = model(inputs)
+                preds = torch.argmax(outs, dim=-1)
+
+                valid_batch_loss.append(
+                    criterion(outs, labels).item()
+                )
+                valid_batch_accuracy.append(
+                    (labels == preds).sum().item() / args.valid_batch_size
+                )
+                f1 = f1_score(preds.cpu().numpy(), labels.cpu().numpy(), average='macro')
+                valid_batch_f1.append(
+                    f1
+                )
+
+                pbar.set_description(
+                    f'valid | f1 : {valid_batch_f1[-1]:.5f} | accuracy : {valid_batch_accuracy[-1]:.5f} | '
+                    f'loss : {valid_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
+                )
+
+                if figure is None:
+                    inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
+                    inputs_np = valid_dataset.denormalize_image(inputs_np, valid_dataset.mean, valid_dataset.std)
+                    figure = grid_image(
+                        inputs_np, labels, preds, n=16, shuffle=True
+                    )
+
+            valid_item = (sum(valid_batch_loss) / len(valid_loader),
+                          sum(valid_batch_accuracy) / len(valid_loader),
+                          sum(valid_batch_f1) / len(valid_loader))
+            best_valid_loss = min(best_valid_loss, valid_item[0])
+            best_valid_acc = max(best_valid_acc, valid_item[1])
+            best_valid_f1 = max(best_valid_f1, valid_item[2])
+            cur_f1 = valid_item[2]
+
+            if cur_f1 >= 0.7:
+                if cur_f1 == best_valid_f1:
+                    print(f"New best model for valid f1 : {cur_f1:.5%}! saving the best model..")
+                    torch.save(model.module.state_dict(), f"{save_dir}/best_{cur_f1:.4f}.pth")
+                    best_valid_f1 = cur_f1
+                else:
+                    torch.save(model.module.state_dict(), f"{save_dir}/last_{cur_f1:.4f}.pth")
+
+            print(
+                f"[Train] f1 : {train_item[2]:.5}, best f1 : {best_train_f1:.5} || "
+                f"acc : {train_item[1]:.5%}, best acc: {best_train_acc:.5%} || "
+                f"loss : {train_item[0]:.5}, best loss: {best_train_loss:.5} || "
+            )
+            print(
+                f"[Valid] f1 : {valid_item[2]:.5}, best f1 : {best_valid_f1:.5} || "
+                f"acc : {valid_item[1]:.5%}, best acc: {best_valid_acc:.5%} || "
+                f"loss : {valid_item[0]:.5}, best loss: {best_valid_loss:.5} || "
+            )
+
+            logger.add_scalar("Val/loss", valid_item[0], epoch)
+            logger.add_scalar("Val/accuracy", valid_item[1], epoch)
+            logger.add_scalar("Val/f1-score", valid_item[2], epoch)
+            logger.add_figure("results", figure, epoch)
+            print()
+
+    return best_valid_f1
+
+
+def train(model_dir, args):
+    seed_everything(args.seed)
+
+    save_dir = increment_path(os.path.join(model_dir, args.name))
+
+    # -- settings
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    num_classes = 18
+
+    # -- dataset
+    if args.data_changed:
+        data = pd.read_csv('/opt/ml/input/data/train/train.csv')
+        data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
+        data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
+        data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
+        train_df, valid_df = train_test_split(data, test_size=args.val_ratio, shuffle=True,
+                                              stratify=data['sub_label'], random_state=args.seed)
+        df = []
+        train_df.apply(lambda x : labeling(x, df), axis=1)
+        train_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
+
+        df = []
+        valid_df.apply(lambda x: labeling(x, df), axis=1)
+        valid_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
+
+        train_df.to_csv(args.train_df, index=False)
+        valid_df.to_csv(args.valid_df, index=False)
+
+        img_stats = get_img_stats(train_df.path.values)
+        mean = np.mean(img_stats["means"], axis=0) / 255.
+        std = np.mean(img_stats["stds"], axis=0) / 255.
+
+    train_dataset_module = getattr(import_module("dataset"), 'TrainDataset')
+    train_dataset = train_dataset_module(
+        train_df_path=args.train_df
+    )
+    if args.data_changed:
+        train_dataset.mean = mean
+        train_dataset.std = std
+    else:
+        train_dataset.mean = [0.53289308, 0.48537505, 0.45752197]
+        train_dataset.std = [0.23708445, 0.24326335, 0.25118391]
+
+    valid_dataset_module = getattr(import_module("dataset"), 'ValidDataset')
+    valid_dataset = valid_dataset_module(
+        valid_df_path=args.valid_df
+    )
+
+    # -- augmentation
+    train_transform_module = getattr(import_module("dataset"), args.augmentation)
+    transform = train_transform_module(
+        resize=args.resize,
+        mean=train_dataset.mean,
+        std=train_dataset.std,
+    )
+    train_dataset.set_transform(transform)
+
+    base_transform_module = getattr(import_module("dataset"), 'BaseAugmentation')
+    transform = base_transform_module(
+        resize=args.resize,
+        mean=train_dataset.mean,
+        std=train_dataset.std,
+    )
+    valid_dataset.set_transform(transform)
+
+
+    # -- data_loader
+    train_loader = DataLoader(
+        dataset=train_dataset,
+        batch_size=args.batch_size,
+        num_workers=multiprocessing.cpu_count()//2,
+        shuffle=True,
+        pin_memory=use_cuda,
+        drop_last=True,
+    )
+
+    valid_loader = DataLoader(
+        dataset=valid_dataset,
+        batch_size=args.valid_batch_size,
+        num_workers=multiprocessing.cpu_count()//2,
+        shuffle=False,
+        pin_memory=use_cuda,
+        drop_last=True,
+    )
+
+    # -- model
+    model_module = getattr(import_module("model"), args.model)  # default: Model
+    model = model_module(
+        model_arch=args.model_name,
+        num_classes=num_classes
+    ).to(device)
+    model = torch.nn.DataParallel(model)
+
+    # -- loss & metric
+
+    if args.criterion == 'weight_cross_entropy':
+        criterion = create_criterion(args.criterion,
+                                     weight=torch.FloatTensor([0.855, 0.892, 0.978, 0.806, 0.784, 0.971,
+                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994,
+                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994]).to(device),
+                                     reduction='mean')
+    else:
+        criterion = create_criterion(args.criterion)  # default: cross_entropy
+    opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Cyclic
+
+    optimizer = opt_module(
+        filter(lambda p: p.requires_grad, model.parameters()),
+        lr=args.lr,
+        # weight_decay=5e-4,
+    )
+    scheduler = CyclicLR(
+        optimizer,
+        base_lr=1e-6,
+        max_lr=args.lr,
+        step_size_down=len(train_dataset) * 2 // args.batch_size,
+        step_size_up=len(train_dataset) // args.batch_size,
+        cycle_momentum=False,
+        mode="triangular2")
+    # scheduler = StepLR(optimizer, args.lr_decay_step, gamma=0.5)
+
+    # -- logging
+    logger = SummaryWriter(log_dir=save_dir)
+    with open(os.path.join(save_dir, 'config.json'), 'w', encoding='utf-8') as f:
+        json.dump(vars(args), f, ensure_ascii=False, indent=4)
+
+    best_train_acc = best_valid_acc = 0
+    best_train_loss = best_valid_loss = np.inf
+    best_train_f1 = best_valid_f1 = 0
+    for epoch in range(args.epochs):
+        # train loop
+        model.train()
+        train_batch_loss = []
+        train_batch_accuracy = []
+        train_batch_f1 = []
+        pbar = tqdm(train_loader)
+        for idx, (inputs, labels) in enumerate(pbar):
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            if np.random.random() <= args.cutmix:
+                W = inputs.shape[2]
+                mix_ratio = np.random.beta(1, 1)
+                cut_W = np.int(W * mix_ratio)
+                bbx1 = np.random.randint(W - cut_W)
+                bbx2 = bbx1 + cut_W
+
+                rand_index = torch.randperm(len(inputs))
+                target_a = labels
+                target_b = labels[rand_index]
+
+                inputs[:, :, :, bbx1:bbx2] = inputs[rand_index, :, :, bbx1:bbx2]
+                outs = model(inputs)
+                loss = criterion(outs, target_a) * mix_ratio + criterion(outs, target_b) * (1. - mix_ratio)
+            else:
+                outs = model(inputs)
+                loss = criterion(outs, labels)
+
+            preds = torch.argmax(outs, dim=-1)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            train_batch_loss.append(
+                loss.item()
+            )
+            train_batch_accuracy.append(
+                (preds == labels).sum().item() / args.batch_size
+            )
+            f1 = f1_score(preds.cpu().numpy(), labels.cpu().numpy(), average='macro')
+            train_batch_f1.append(
+                f1
+            )
+
+            pbar.set_description(
+                f'Epoch #{epoch:2.0f} | '
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
@@ -402,6 +661,7 @@ if __name__ == '__main__':
                         help='csv file path of validation data')
     parser.add_argument('--data_changed', type=bool, default=False,
                         help='change data and settings (default: False)')
+    parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/faces'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
@@ -411,4 +671,11 @@ if __name__ == '__main__':
     data_dir = args.data_dir
     model_dir = args.model_dir
 
-    train(model_dir, args)
+    if args.cv:
+        data = pd.read_csv('/opt/ml/input/data/train/train.csv')
+        data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
+        data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
+        data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
+        cross_validation(model_dir, args, data, 5)
+    else:
+        train(model_dir, args)
