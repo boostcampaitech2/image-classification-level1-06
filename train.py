@@ -276,7 +276,7 @@ def train(model_dir, args):
             )
 
             pbar.set_description(
-                f'Epoch #{epoch:2f}'
+                f'Epoch #{epoch:2.f}'
                 f'train | f1 : {train_batch_f1[-1]:.5f} | accuracy : {train_batch_accuracy[-1]:.5f} | '
                 f'loss : {train_batch_loss[-1]:.5f} | lr : {get_lr(optimizer):.7f}'
             )
