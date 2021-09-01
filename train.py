@@ -470,7 +470,14 @@ def train(model_dir, args):
     model = torch.nn.DataParallel(model)
 
     # -- loss & metric
-    criterion = create_criterion(args.criterion)  # default: cross_entropy
+    if args.criterion == 'weight_cross_entropy':
+        criterion = create_criterion(args.criterion,
+                                     weight=torch.FloatTensor([0.855, 0.892, 0.978, 0.806, 0.784, 0.971,
+                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994,
+                                                               0.971, 0.978, 0.996, 0.961, 0.957, 0.994]).to(device),
+                                     reduction='mean')
+    else:
+        criterion = create_criterion(args.criterion)  # default: cross_entropy
     if args.optimizer == 'MADGRAD':
         opt_module = getattr(import_module("optimizer"), args.optimizer)
         optimizer = opt_module(
@@ -659,7 +666,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='Model', help='model class (default: BaseModel)')
     parser.add_argument('--model_name', type=str, default='efficientnet_b4', help='what kinds of models (default: efficientnet_b4)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
-    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate (default: 1e-3)')
+    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='cross_entropy', help='criterion type (default: cross_entropy)')
     parser.add_argument('--cutmix', type=float, default='0.5', help='cutmix ratio (if ratio is 0, not cutmix)')
