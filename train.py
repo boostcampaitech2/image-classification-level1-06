@@ -107,14 +107,28 @@ def get_img_stats(img_paths):
     return img_info
 
 
-def cross_validation(model_dir, args, df, k_folds=5):
+def get_perfect_df():
+    perfect_df = pd.read_csv('/opt/ml/input/data/train/perfect_train.csv')
+    perfect_df['people_path'] = perfect_df['path'].apply(lambda x: x.split('/')[-2])
+    perfect_df['sub_label'] = perfect_df.apply(lambda x: x['gender'] * 3 + x['age'], axis=1)
+
+    sub_label_df = perfect_df.drop_duplicates(subset=['people_path', 'sub_label']).reset_index(drop=True)
+
+    return perfect_df, sub_label_df
+
+
+def cross_validation(model_dir, args, perfect_df, sub_label_df, k_folds=5):
     seed_everything(args.seed)
 
     fold_valid_f1_list = []
     skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=args.seed)
-    for n_iter, (train_idx, valid_idx) in enumerate(skf.split(df, df.sub_label), start=1):
+    for n_iter, (train_idx, valid_idx) in enumerate(skf.split(sub_label_df, sub_label_df.sub_label), start=1):
         print(f'>> Cross Validation {n_iter} Starts!')
-        train_df, valid_df = df.iloc[train_idx].reset_index(drop=True), df.iloc[valid_idx].reset_index(drop=True)
+        train_people_path = sub_label_df.iloc[train_idx].people_path.tolist()
+        valid_people_path = sub_label_df.iloc[valid_idx].people_path.tolist()
+
+        train_df = perfect_df[perfect_df['people_path'].isin(train_people_path)]
+        valid_df = perfect_df[perfect_df['people_path'].isin(valid_people_path)]
 
         best_valid_f1 = cv_train(model_dir, args, train_df, valid_df)
         fold_valid_f1_list.append(best_valid_f1)
@@ -132,14 +146,6 @@ def cv_train(model_dir, args, train_df, valid_df):
     num_classes = 18
 
     # -- dataset
-    df = []
-    train_df.apply(lambda x: labeling(x, df), axis=1)
-    train_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
-
-    df = []
-    valid_df.apply(lambda x: labeling(x, df), axis=1)
-    valid_df = pd.DataFrame(data=df, columns=['path', 'age_label', 'gender_label', 'mask_label', 'label'])
-
     train_dataset_module = getattr(import_module("dataset"), 'CVTrainDataset')
     train_dataset = train_dataset_module(
         train_df=train_df
@@ -196,12 +202,20 @@ def cv_train(model_dir, args, train_df, valid_df):
 
     # -- loss & metric
     criterion = create_criterion(args.criterion)  # default: cross_entropy
-    opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Adam
-    optimizer = opt_module(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=args.lr,
-        # weight_decay=5e-4,
-    )
+    if args.optimizer == 'MADGRAD':
+        opt_module = getattr(import_module("optimizer"), args.optimizer)
+        optimizer = opt_module(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=args.lr,
+            # weight_decay=5e-4,
+        )
+    else:
+        opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Adam
+        optimizer = opt_module(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=args.lr,
+            # weight_decay=5e-4,
+        )
     scheduler = CyclicLR(
         optimizer,
         base_lr=1e-6,
@@ -457,12 +471,20 @@ def train(model_dir, args):
 
     # -- loss & metric
     criterion = create_criterion(args.criterion)  # default: cross_entropy
-    opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Adam
-    optimizer = opt_module(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=args.lr,
-        # weight_decay=5e-4,
-    )
+    if args.optimizer == 'MADGRAD':
+        opt_module = getattr(import_module("optimizer"), args.optimizer)
+        optimizer = opt_module(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=args.lr,
+            # weight_decay=5e-4,
+        )
+    else:
+        opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Adam
+        optimizer = opt_module(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=args.lr,
+            # weight_decay=5e-4,
+        )
     scheduler = CyclicLR(
         optimizer,
         base_lr=1e-6,
@@ -663,10 +685,7 @@ if __name__ == '__main__':
     model_dir = args.model_dir
 
     if args.cv:
-        data = pd.read_csv('/opt/ml/input/data/train/train.csv')
-        data['age_label'] = data['age'].apply(lambda x: int(int(x) >= 30) + int(int(x) >= 58))
-        data['gender_label'] = data['gender'].apply(lambda x: int(len(x) * 1.5 - 6))
-        data['sub_label'] = data.apply(lambda x: x.age_label + x.gender_label, axis=1)
-        cross_validation(model_dir, args, data, 5)
+        perfect_df, sub_label_df = get_perfect_df()
+        cross_validation(model_dir, args, perfect_df, sub_label_df, 5)
     else:
         train(model_dir, args)
