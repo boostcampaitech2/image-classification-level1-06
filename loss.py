@@ -89,7 +89,8 @@ _criterion_entrypoints = {
     'label_smoothing': LabelSmoothingLoss,
     'f1': F1Loss,
     'weight_cross_entropy': nn.CrossEntropyLoss,
-    'symmetric': SymmetricCrossEntropyLoss
+    'symmetric': SymmetricCrossEntropyLoss,
+    'BCELoss' : nn.BCELoss
 }
 
 

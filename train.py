@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from torch.nn.functional import multi_head_attention_forward, sigmoid
 from torch.optim.lr_scheduler import StepLR, CyclicLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -377,6 +378,20 @@ def cv_train(model_dir, args, train_df, valid_df):
     return best_valid_f1
 
 
+def multi_train(model_dir, args):
+    features = ['age', 'gender', 'mask']
+    criterions = ['cross_entropy', 'cross_entropy', 'cross_entropy']
+    classes = [3, 2, 3]
+
+    for feature, criterion, num_classes in zip(features, criterions, classes):
+        args.criterion = criterion
+        args.num_classes = num_classes
+        args.name = args.name+'_'+feature
+        args.features = feature
+        train(model_dir, args)
+        args.name = args.name.split('_')[0]
+
+
 def train(model_dir, args):
     seed_everything(args.seed)
 
@@ -385,7 +400,7 @@ def train(model_dir, args):
     # -- settings
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    num_classes = 18
+    num_classes = args.num_classes
 
     # -- dataset
 
@@ -400,12 +415,14 @@ def train(model_dir, args):
 
     train_dataset_module = getattr(import_module("dataset"), 'TrainDataset')
     train_dataset = train_dataset_module(
-        train_df=train_df
+        train_df=train_df,
+        features=args.features
     )
 
     valid_dataset_module = getattr(import_module("dataset"), 'ValidDataset')
     valid_dataset = valid_dataset_module(
-        valid_df=valid_df
+        valid_df=valid_df,
+        features=args.features
     )
 
     # -- augmentation
@@ -653,7 +670,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='symmetric', help='criterion type (default: symmetric)')
-    parser.add_argument('--cutmix', type=float, default='0.8', help='cutmix ratio (if ratio is 0, not cutmix)')
+    parser.add_argument('--cutmix', type=float, default=0.8, help='cutmix ratio (if ratio is 0, not cutmix)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=21, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='experiment', help='model save at {SM_MODEL_DIR}/{name}')
@@ -666,6 +683,10 @@ if __name__ == '__main__':
     parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/faces'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
+    parser.add_argument('--multi', type=bool, default=False, help='model train multiclass by age, gender, mask')
+    parser.add_argument('--features', default=False, help='given in multi train model')
+
+
 
     args = parser.parse_args()
     print(args)
@@ -675,5 +696,7 @@ if __name__ == '__main__':
 
     if args.cv:
         cross_validation(model_dir, args, 5)
+    elif args.multi:
+        multi_train(model_dir, args)
     else:
         train(model_dir, args)
