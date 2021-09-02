@@ -30,22 +30,22 @@
 ### Facenet
 
 ## Training
-- `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
+`SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
 
-### Train Models
+> ### Train Models
 - efficientnet_b2_pruned 
 - efficientnet_b4
 - seresnext
 - nfnet_l0
 
-### Stratified K-fold
-### Multilabel Classification
+> ### Stratified K-fold
+> ### Multilabel Classification
 - gender
 - age
 - mask
 
 
 ## Inference
-- `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
+`SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
 
 ### Ensemble
