@@ -17,6 +17,18 @@
 ### Evaluation
 - `SM_GROUND_TRUTH_DIR=[GT dir] SM_OUTPUT_DATA_DIR=[inference output dir] python evaluation.py`
 
+### Contents
+- 'dataset.py'
+- 'face_image.py'
+- 'loss.py'
+- 'model.py'
+- 'optimizer.py'
+- 'train.py'
+- 'inference.py'
+- 'evaluation.py'
+- 'train_stratified_face.csv'
+- 'valid_stratified_face.csv'
+
 ## Dataset Preparation
 ### Prepare Images
 - 31,500 Images ( train : 18,900 | eval : 12,600 )
@@ -29,6 +41,10 @@
 
 ### Facenet
  - [face_image.py](https://github.com/boostcampaitech2/image-classification-level1-06/blob/main/face_image.py)
+
+### Generate CSV files
+- 'train_stratified_face.csv'
+- 'valid_stratified_face.csv'
 
 ## Training
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
@@ -48,5 +64,12 @@
 
 ## Inference
 `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
+
+'$ python inference.py \
+  --model_dir={model_filepath} \
+  --pth_name={model parameter name (ensemble, cross_validation : best)} \
+  --output_name={output_filename} \
+  --cv={cross_validation}'
+
 
 ### Ensemble
