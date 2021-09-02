@@ -25,8 +25,7 @@
 - mask : 개인별 정상 착용 5장, 비정상적 착용 1장, 미착용 1장
 
 ### Data Labeling
-![image](https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png)
-<img src="https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png" height="600"/>
+<img src="https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png" height="500"/>
 
 ### Facenet
 
