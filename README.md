@@ -28,7 +28,7 @@
 <img src="https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png" height="500"/>
 
 ### Facenet
- - face_image.py(https://github.com/boostcampaitech2/image-classification-level1-06/blob/main/face_image.py)
+ - [face_image.py](https://github.com/boostcampaitech2/image-classification-level1-06/blob/main/face_image.py)
 
 ## Training
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
