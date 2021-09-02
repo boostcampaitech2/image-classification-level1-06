@@ -65,11 +65,13 @@
 ## Inference
 `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
 
-`$ python inference.py \
+```
+$ python inference.py \
   --model_dir={model_filepath} \
   --pth_name={model parameter name (ensemble, cross_validation : best)} \
   --output_name={output_filename} \
-  --cv={cross_validation}`
+  --cv={cross_validation}
+  ```
 
 
 ### Ensemble
