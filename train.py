@@ -146,17 +146,19 @@ def cv_train(model_dir, args, train_df, valid_df):
     # -- settings
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    num_classes = 18
+    num_classes = args.num_classes
 
     # -- dataset
     train_dataset_module = getattr(import_module("dataset"), 'TrainDataset')
     train_dataset = train_dataset_module(
-        train_df=train_df
+        train_df=train_df,
+        features=args.features
     )
 
     valid_dataset_module = getattr(import_module("dataset"), 'ValidDataset')
     valid_dataset = valid_dataset_module(
-        valid_df=valid_df
+        valid_df=valid_df,
+        features=args.features
     )
 
     # -- augmentation
@@ -388,7 +390,13 @@ def multi_train(model_dir, args):
         args.num_classes = num_classes
         args.name = args.name+'_'+feature
         args.features = feature
-        train(model_dir, args)
+        if feature == 'gender' or feature == 'mask':
+            continue
+        if args.multi == 1:
+            train(model_dir, args)
+        elif args.multi == 2:
+            cross_validation(model_dir, args, 3)
+
         args.name = args.name.split('_')[0]
 
 
@@ -683,7 +691,7 @@ if __name__ == '__main__':
     parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/faces'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
-    parser.add_argument('--multi', type=bool, default=False, help='model train multiclass by age, gender, mask')
+    parser.add_argument('--multi', type=int, default=0, help='model train multiclass by age, gender, mask/ 0 : train, 1 : multi train, 2 : multi train with cv')
     parser.add_argument('--features', default=False, help='given in multi train model')
 
 
