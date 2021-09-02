@@ -18,16 +18,16 @@
 - `SM_GROUND_TRUTH_DIR=[GT dir] SM_OUTPUT_DATA_DIR=[inference output dir] python evaluation.py`
 
 ### Contents
-- 'dataset.py'
-- 'face_image.py'
-- 'loss.py'
-- 'model.py'
-- 'optimizer.py'
-- 'train.py'
-- 'inference.py'
-- 'evaluation.py'
-- 'train_stratified_face.csv'
-- 'valid_stratified_face.csv'
+- `dataset.py`
+- `face_image.py`
+- `loss.py`
+- `model.py`
+- `optimizer.py`
+- `train.py`
+- `inference.py`
+- `evaluation.py`
+- `train_stratified_face.csv`
+- `valid_stratified_face.csv`
 
 ## Dataset Preparation
 ### Prepare Images
@@ -65,11 +65,11 @@
 ## Inference
 `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
 
-'$ python inference.py \
+`$ python inference.py \
   --model_dir={model_filepath} \
   --pth_name={model parameter name (ensemble, cross_validation : best)} \
   --output_name={output_filename} \
-  --cv={cross_validation}'
+  --cv={cross_validation}`
 
 
 ### Ensemble
