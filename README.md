@@ -26,20 +26,21 @@
 
 ### Data Labeling
 ![image](https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png)
+<img src="https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png" height="400"/>
 
 ### Facenet
 
 ## Training
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
 
-> ### Train Models
+### Train Models
 - efficientnet_b2_pruned 
 - efficientnet_b4
 - seresnext
 - nfnet_l0
 
-> ### Stratified K-fold
-> ### Multilabel Classification
+### Stratified K-fold
+### Multilabel Classification
 - gender
 - age
 - mask
