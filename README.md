@@ -40,6 +40,9 @@
 
 ### Stratified K-fold
 ### Multilabel Classification
+- gender
+- age
+- mask
 
 
 ## Inference
