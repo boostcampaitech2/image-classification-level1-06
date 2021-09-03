@@ -12,15 +12,6 @@
 ### Install Requirements
 - `pip install -r requirements.txt`
 
-### Training
-- `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
-
-### Inference
-- `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
-
-### Evaluation
-- `SM_GROUND_TRUTH_DIR=[GT dir] SM_OUTPUT_DATA_DIR=[inference output dir] python evaluation.py`
-
 ### Contents
 - `dataset.py`
 - `face_image.py` : FaceNet 적용
@@ -33,6 +24,15 @@
 - `train_stratified_face.csv` : stratified dataset (train)
 - `valid_stratified_face.csv` : stratified dataset (valid)
 - `perfect_train.csv` : dataset for multilabel classification
+
+### Training
+- `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
+
+### Inference
+- `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
+
+### Evaluation
+- `SM_GROUND_TRUTH_DIR=[GT dir] SM_OUTPUT_DATA_DIR=[inference output dir] python evaluation.py`
 
 ## :mag: Overview
 ### Background
