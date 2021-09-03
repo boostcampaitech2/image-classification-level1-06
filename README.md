@@ -44,9 +44,12 @@
 ### Facenet
  - [face_image.py](https://github.com/boostcampaitech2/image-classification-level1-06/blob/main/face_image.py)
 
+```
+$ python face_image.py
+```
+
 ### Generate CSV files
-- 'train_stratified_face.csv'
-- 'valid_stratified_face.csv'
+- 'perfect_train.csv'
 
 ## Training
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
@@ -54,7 +57,7 @@
 ### Train Models
 - efficientnet_b2_pruned 
 - efficientnet_b4
-- seresnext
+- seresnext26d_32x4d
 - nfnet_l0
 
 ### Stratified K-fold
@@ -68,12 +71,31 @@
 `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
 
 ```
+# 단일 model을 통해 inference 시
 $ python inference.py \
+  --model_name={kinds of models} \
   --model_dir={model_filepath} \
   --pth_name={model parameter name (ensemble, cross_validation : best)} \
   --output_name={output_filename} \
-  --cv={cross_validation}
-  ```
+```
 
+```
+# cross_validation 을 사용해 나온 model 5개를 통해 inference 시
+$ python inference.py \
+  --model_name={kinds of models} \
+  --model_dir={model_filepath} \
+  --pth_name=best \
+  --output_name={output_filename} \
+  --cv=True
+```
 
-### Ensemble
+```
+# ensemble 을 사용해 inference 시
+$ python inference.py \
+  --ensemble_model_name={kinds of models : 띄어쓰기로 구분한 여러개의 model_name} \
+  --ensemble_model_dir={model_filepath : 띄어쓰기로 구분한 여러개의 model_file_path} \
+  --pth_name=best \
+  --output_name={output_filename} \
+  --ensemble=True
+```
+
