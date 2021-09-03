@@ -88,6 +88,7 @@ class TrainDataset(Dataset):
                          'gender' : self.train_df['gender'].iloc[index],
                          'mask' : self.train_df['mask'].iloc[index]} 
         
+        # multi label을 사용하는 경우
         if self.features:
             return image_transform, torch.tensor(feature_label_dict[self.features])
         else:
@@ -134,7 +135,8 @@ class ValidDataset(Dataset):
         feature_label_dict = {'age' : self.valid_df['age'].iloc[index],
                          'gender' : self.valid_df['gender'].iloc[index],
                          'mask' : self.valid_df['mask'].iloc[index]}
-
+        
+        # multi label을 사용하는 경우
         if self.features:
             return image_transform, torch.tensor(feature_label_dict[self.features])
         else: 
