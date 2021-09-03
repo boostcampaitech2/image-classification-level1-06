@@ -87,7 +87,7 @@ $ python face_image.py
 - mask
 
 
-## Inference
+## :thought_balloon: Inference
 `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
 
 ```
