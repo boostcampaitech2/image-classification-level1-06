@@ -90,9 +90,9 @@ $ python face_image.py
   - NFNet_l0
 
 ### Stratified K-fold
-''' py 
+```py 
 from sklearn.model_selection import StratifiedKFold
-'''
+```
 `python train.py --cv True`
 `train.py` cross_validation 함수
 
