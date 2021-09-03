@@ -122,7 +122,7 @@ def get_perfect_df():
 
     return perfect_df, sub_label_df
 
-
+# cv=True일 경우 cross validation 실행
 def cross_validation(model_dir, args, k_folds=5):
     seed_everything(args.seed)
 
@@ -145,7 +145,6 @@ def cross_validation(model_dir, args, k_folds=5):
     print(f'CV F1-Score: {np.mean(fold_valid_f1_list)}')
 
 
-# cv=True일 경우 cross validation 실행
 def cv_train(model_dir, args, train_df, valid_df):
     save_dir = increment_path(os.path.join(model_dir, args.name))
 
