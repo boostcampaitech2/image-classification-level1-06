@@ -71,7 +71,7 @@ $ python face_image.py
 ### Generate CSV files
 - 'perfect_train.csv'
 
-## Training
+## :running: Training
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
 
 ### Train Models
