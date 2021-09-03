@@ -57,6 +57,7 @@
 ## :mask: Dataset Preparation
 ### Prepare Images
 <img width="1103" alt="스크린샷 2021-09-03 오후 11 05 14" src="https://user-images.githubusercontent.com/68593821/132018480-dcc7ddc0-e019-4797-8b98-72fa97b69856.png">
+<a href="https://kr.freepik.com/vectors/medical">Medical 벡터는 freepik - kr.freepik.com가 제작함</a>
 
 - 전체 사람 수 : 4500명 (train : 2700 | eval : 1800)
 - age : 20대 - 70대
