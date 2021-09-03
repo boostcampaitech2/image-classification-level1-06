@@ -76,7 +76,7 @@ $ python face_image.py
   - FaceCrop 후 Resize를 거친 이미지 크기 : (280, 210)
 
 ### Generate CSV files
-- 'perfect_train.csv'
+- `perfect_train.csv`
 
 ## :running: Training
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
@@ -98,9 +98,8 @@ from sklearn.model_selection import StratifiedKFold
 `train.py` cross_validation 함수
 
 ### Multilabel Classification
-- gender
-- age
-- mask
+- gender, age, mask 각각 학습
+- `train.py` multi_train 함수
 
 
 ## :thought_balloon: Inference
