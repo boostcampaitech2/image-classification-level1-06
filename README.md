@@ -46,10 +46,14 @@ COVID-19의 확산으로 우리나라는 물론 전 세계 사람들은 경제�
 카메라로 비춰진 사람 얼굴 이미지만으로 이 사람이 마스크를 쓰고 있는지, </br>
 쓰지 않았는지, 정확히 쓴 것이 맞는지 자동으로 가려낼 수 있는 시스템 or 모델
 
+### Development environment
+- GPU V100 원격 서버
+- PyCharm 또는 Visual Studio Code | Python 3.7(or over)
+
 ### Evaluation
 <img src="https://www.googleapis.com/download/storage/v1/b/kaggle-user-content/o/inbox%2F6390139%2Fb19f3db709b41788c3b1333ef1ae11a9%2Ff1score.png?generation=1608093256720406&alt=media">
 
-## :mask: Dataset Preparation
+## Dataset Preparation
 ### Prepare Images
 - 전체 사람 수 : 4500명 (train : 2700 | eval : 1800)
 - age : 20대 - 70대
