@@ -23,15 +23,16 @@
 
 ### Contents
 - `dataset.py`
-- `face_image.py`
-- `loss.py`
-- `model.py`
-- `optimizer.py`
+- `face_image.py` : FaceNet 적용
+- `loss.py` 
+- `model.py` 
+- `optimizer.py` 
 - `train.py`
 - `inference.py`
 - `evaluation.py`
-- `train_stratified_face.csv`
-- `valid_stratified_face.csv`
+- `train_stratified_face.csv` : stratified dataset (train)
+- `valid_stratified_face.csv` : stratified dataset (valid)
+- `perfect_train.csv` : dataset for multilabel classification
 
 ## :mag: Overview
 ### Background
@@ -63,6 +64,7 @@
 - 이미지 크기 : (384,512)
 
 ### Data Labeling
+- gender, age, mask 기준 18개의 클래스로 분류
 <img src="https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png" height="500"/>
 
 ### Facenet
@@ -88,6 +90,12 @@ $ python face_image.py
   - NFNet_l0
 
 ### Stratified K-fold
+''' py 
+from sklearn.model_selection import StratifiedKFold
+'''
+`python train.py --cv True`
+`train.py` cross_validation 함수
+
 ### Multilabel Classification
 - gender
 - age
