@@ -165,3 +165,5 @@ $ python inference.py \
   --output_name={output_filename} \
   -- multi True
 ```
+## 📄 Wrap Up Report
+[Wrap Up Report](https://github.com/boostcampaitech2/image-classification-level1-06/files/7107301/_level1_6.docx)
