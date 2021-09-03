@@ -44,7 +44,7 @@ COVID-19의 확산으로 우리나라는 물론 전 세계 사람들은 경제�
 자동으로 가려낼 수 있는 시스템 or 모델
 
 ### Evaluation
-<img src="https://www.notion.so/Special-mission-EDA-Exploratory-Data-Analysis-b60a5d69a33249bf831a635c28c8fcae#8f3856e6d05340dd936edca8eb14ca38">
+<img src="https://www.googleapis.com/download/storage/v1/b/kaggle-user-content/o/inbox%2F6390139%2Fb19f3db709b41788c3b1333ef1ae11a9%2Ff1score.png?generation=1608093256720406&alt=media">
 
 ## Dataset Preparation
 ### Prepare Images
