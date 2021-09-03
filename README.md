@@ -79,11 +79,13 @@ $ python face_image.py
 `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
 
 ### Train Models
-- [Efficientnet](https://arxiv.org/pdf/1905.11946.pdf)
-  - efficientnet_b2_pruned 
-  - efficientnet_b4
-- seresnext26d_32x4d
-- nfnet_l0
+- [EfficientNet](https://arxiv.org/pdf/1905.11946.pdf)
+  - EfficientNet_b2_pruned 
+  - EfficientNet_b4
+- [SEResNet(SE block + ResNet)](https://arxiv.org/pdf/1709.01507.pdf)
+  - SEResNet26d_32x4d
+- [NFNet](https://arxiv.org/pdf/2102.06171.pdf)
+  - NFNet_l0
 
 ### Stratified K-fold
 ### Multilabel Classification
