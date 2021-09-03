@@ -92,17 +92,6 @@ def increment_path(path, exist_ok=False):
         return f"{path}{n}"
 
 
-# 라벨링
-def labeling(x, df):
-    path, sub_label = x['path'], x['sub_label']
-    for image_path in glob(os.path.join('/opt/ml/input/data/train/faces', path, '*')):
-        if 'incorrect' in image_path: new_label = 6
-        elif 'normal' in image_path: new_label = 12
-        else: new_label = 0
-        label = x.age_label + x.gender_label + new_label
-        df.append([image_path, x.age_label, x.gender_label, new_label, label])
-
-
 # 이미지 정보 가져옴
 def get_img_stats(img_paths):
     img_info = dict(means=[], stds=[])
@@ -121,6 +110,7 @@ def get_perfect_df():
     sub_label_df = perfect_df.drop_duplicates(subset=['people_path', 'sub_label']).reset_index(drop=True)
 
     return perfect_df, sub_label_df
+
 
 # cv=True일 경우 cross validation 실행
 def cross_validation(model_dir, args, k_folds=5):
@@ -700,10 +690,6 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='experiment', help='model save at {SM_MODEL_DIR}/{name}')
 
     # Container environment
-    parser.add_argument('--train_df', type=str, default="/opt/ml/train_stratified_face.csv",
-                        help='csv file path of train data')
-    parser.add_argument('--valid_df', type=str, default="/opt/ml/valid_stratified_face.csv",
-                        help='csv file path of validation data')
     parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/faces'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
