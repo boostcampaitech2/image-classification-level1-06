@@ -92,6 +92,9 @@ $ python face_image.py
   - SEResNet26d_32x4d
 - [NFNet](https://arxiv.org/pdf/2102.06171.pdf)
   - NFNet_l0
+```
+$ python train.py
+```
 
 ### Stratified K-fold
 <img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2F3gQO8%2FbtqF0ZOHja8%2FSUTbGTYwVndcUJ5qWusqa0%2Fimg.png" height="250">
@@ -106,7 +109,10 @@ $ python train.py --cv True
 
 ### Multilabel Classification
 - gender, age, mask 각각 학습
-- `train.py` multi_train 함수
+```
+$ python train.py \
+--multi=True
+```
 
 
 ## :thought_balloon: Inference
