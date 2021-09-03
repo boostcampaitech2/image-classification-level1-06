@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 
-from PIL import Image
+from PIL import Image, ImageTransform
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.transforms import *
@@ -64,11 +64,12 @@ class TrainAugmentation:
 
 ################################# Dataset ######################################
 class TrainDataset(Dataset):
-    def __init__(self, train_df, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
+    def __init__(self, train_df, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251), features=False):
         self.mean = mean
         self.std = std
         self.train_df = train_df
         self.transform = None
+        self.features = features
 
     def set_transform(self, transform):
         self.transform = transform
@@ -83,15 +84,23 @@ class TrainDataset(Dataset):
         image = Image.open(path).convert('RGB')
         image_transform = self.transform(image)
         label = self.train_df.label.iloc[index]
-        return image_transform, torch.tensor(label)
+        feature_label_dict = {'age' : self.train_df['age'].iloc[index],
+                         'gender' : self.train_df['gender'].iloc[index],
+                         'mask' : self.train_df['mask'].iloc[index]} 
+        
+        if self.features:
+            return image_transform, torch.tensor(feature_label_dict[self.features])
+        else:
+            return image_transform, torch.tensor(label)
 
 
 class ValidDataset(Dataset):
-    def __init__(self, valid_df, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251)):
+    def __init__(self, valid_df, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251), features=False):
         self.mean = mean
         self.std = std
         self.valid_df = valid_df
         self.transform = None
+        self.features = features
 
     def set_transform(self, transform):
         self.transform = transform
@@ -122,7 +131,14 @@ class ValidDataset(Dataset):
         image = Image.open(path).convert('RGB')
         image_transform = self.transform(image)
         label = self.valid_df.label.iloc[index]
-        return image_transform, torch.tensor(label)
+        feature_label_dict = {'age' : self.valid_df['age'].iloc[index],
+                         'gender' : self.valid_df['gender'].iloc[index],
+                         'mask' : self.valid_df['mask'].iloc[index]}
+
+        if self.features:
+            return image_transform, torch.tensor(feature_label_dict[self.features])
+        else: 
+            return image_transform, torch.tensor(label)
 
 
 class TestDataset(Dataset):
