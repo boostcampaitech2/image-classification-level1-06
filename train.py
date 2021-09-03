@@ -139,7 +139,7 @@ def cross_validation(model_dir, args, k_folds=5):
     print(f'CV F1-Score: {np.mean(fold_valid_f1_list)}')
 
 
-def cv_train(model_dir, args, train_df, valid_df):
+def cv_train(model_dir, args, train_df, valid_df): # cv=True일 경우 cross validation 실행
     save_dir = increment_path(os.path.join(model_dir, args.name))
 
     # -- settings
