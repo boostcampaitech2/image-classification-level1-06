@@ -2,7 +2,7 @@
   <h1>pstage_01_image_classification</h1>
 </div>
 
-![image](![pstage](https://user-images.githubusercontent.com/51067412/132005829-b9680adc-5971-4c4d-ba1a-4a1504d45d74.PNG))
+![image](![pstage](![pstage](https://user-images.githubusercontent.com/51067412/132005903-b9a1ade6-ba64-4d0f-9ac6-bdcc56fc4ada.PNG)))
 
 ## :fire: Getting Started
 ### Dependencies
