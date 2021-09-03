@@ -49,7 +49,7 @@ COVID-19의 확산으로 우리나라는 물론 전 세계 사람들은 경제�
 ### Evaluation
 <img src="https://www.googleapis.com/download/storage/v1/b/kaggle-user-content/o/inbox%2F6390139%2Fb19f3db709b41788c3b1333ef1ae11a9%2Ff1score.png?generation=1608093256720406&alt=media">
 
-## Dataset Preparation
+## :mask: Dataset Preparation
 ### Prepare Images
 - 전체 사람 수 : 4500명 (train : 2700 | eval : 1800)
 - age : 20대 - 70대
