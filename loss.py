@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 
 # https://discuss.pytorch.org/t/is-this-a-correct-implementation-for-focal-loss-in-pytorch/43327/8
+
+# FocalLoss
 class FocalLoss(nn.Module):
     def __init__(self, weight=None,
                  gamma=2., reduction='mean'):
@@ -22,7 +24,7 @@ class FocalLoss(nn.Module):
             reduction=self.reduction
         )
 
-
+# LabelSmoothing
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, classes=18, smoothing=0.0, dim=-1):
         super(LabelSmoothingLoss, self).__init__()
@@ -41,6 +43,7 @@ class LabelSmoothingLoss(nn.Module):
 
 
 # https://gist.github.com/SuperShinyEyes/dcc68a08ff8b615442e3bc6a9b55a354
+# F1Loss
 class F1Loss(nn.Module):
     def __init__(self, classes=18, epsilon=1e-7):
         super().__init__()
@@ -65,6 +68,7 @@ class F1Loss(nn.Module):
         return 1 - f1.mean()
 
 # https://www.kaggle.com/c/cassava-leaf-disease-classification/discussion/208239
+# Symmetric
 class SymmetricCrossEntropyLoss(nn.Module):
     
     def __init__(self, alpha=0.1, beta=1.0, num_classes= 18):
@@ -94,7 +98,7 @@ _criterion_entrypoints = {
     'BCELoss' : nn.BCELoss
 }
 
-
+# criterion이 있는지 확인 
 def criterion_entrypoint(criterion_name):
     return _criterion_entrypoints[criterion_name]
 
@@ -102,7 +106,7 @@ def criterion_entrypoint(criterion_name):
 def is_criterion(criterion_name):
     return criterion_name in _criterion_entrypoints
 
-
+# criterion 생성
 def create_criterion(criterion_name, **kwargs):
     if is_criterion(criterion_name):
         create_fn = criterion_entrypoint(criterion_name)
