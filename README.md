@@ -34,6 +34,7 @@
 - `valid_stratified_face.csv`
 
 ## :mag: Overview
+![캡처](https://user-images.githubusercontent.com/64246382/132006174-2c3bd810-681b-40e9-b441-c3c283940d7e.PNG)
 ### Background
 COVID-19의 확산으로 우리나라는 물론 전 세계 사람들은 경제적, 생산적인 활동에 많은 제약을 받고있습니다. </br>
 확산을 막기위해 많은 노력들을 하고 있지만 COVID-19의 강한 전염력 때문에 우리를 오랫동안 괴롭히고 있습니다. </br>
