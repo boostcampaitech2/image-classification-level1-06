@@ -80,7 +80,6 @@ $ python face_image.py
 - `perfect_train.csv`
 
 ## :running: Training
-`SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
 
 ### Train Models
 - [EfficientNet](https://arxiv.org/pdf/1905.11946.pdf)
@@ -113,7 +112,6 @@ $ python train.py --multi=True
 
 
 ## :thought_balloon: Inference
-`SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
 
 ```
 # 단일 model을 통해 inference 시
