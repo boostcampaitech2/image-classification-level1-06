@@ -254,13 +254,14 @@ def cv_train(model_dir, args, train_df, valid_df):
                 bbx2 = bbx1 + cut_W
 
                 rand_index = torch.randperm(len(inputs))
-                target_a = labels
-                target_b = labels[rand_index]
+                target_a = labels # 원본 이미지 label
+                target_b = labels[rand_index] # 패치 이미지 label
 
                 inputs[:, :, :, bbx1:bbx2] = inputs[rand_index, :, :, bbx1:bbx2]
                 outs = model(inputs)
-                loss = criterion(outs, target_a) * mix_ratio + criterion(outs, target_b) * (1. - mix_ratio)
-            else:
+                loss = criterion(outs, target_a) * mix_ratio + criterion(outs, target_b) * (1. - mix_ratio)# 패치 이미지와 원본 이미지의 비율에 맞게 loss 계산
+            
+            else: # cutmix가 실행되지 않았을 경우
                 outs = model(inputs)
                 loss = criterion(outs, labels)
 
