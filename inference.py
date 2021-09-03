@@ -11,6 +11,7 @@ from tqdm import tqdm
 from dataset import TestDataset
 
 
+# load train model from .pth file
 def load_model(model_name, pth_name, saved_model, num_classes, device):
     model_cls = getattr(import_module("model"), args.model)
     model = model_cls(
@@ -28,6 +29,7 @@ def load_model(model_name, pth_name, saved_model, num_classes, device):
     return model
 
 
+# load cv train model from .pth file
 def cv_load_model(model_name, pth_name, saved_model, num_classes, device):
     model_cls = getattr(import_module("model"), args.model)
     model = model_cls(
@@ -47,6 +49,7 @@ def cv_load_model(model_name, pth_name, saved_model, num_classes, device):
     return model
 
 
+# inference loaded train model
 @torch.no_grad()
 def inference(data_dir, model_dir, output_dir, args):
     """
@@ -89,6 +92,7 @@ def inference(data_dir, model_dir, output_dir, args):
     print(f'Inference Done!')
 
 
+# inference loaded multi-labeled (cv)train models
 @torch.no_grad()
 def multi_inference(data_dir, model_dir, output_dir, args):
     """
@@ -166,6 +170,7 @@ def multi_inference(data_dir, model_dir, output_dir, args):
     print(f'Inference Done!')
 
 
+# inference loaded cv train models
 @torch.no_grad()
 def cv_inference(data_dir, model_dir, output_dir, args):
     """
@@ -221,6 +226,7 @@ def cv_inference(data_dir, model_dir, output_dir, args):
     print(f'Inference Done!')
 
 
+# inference loaded ensemble models
 @torch.no_grad()
 def ensemble_inference(data_dir, ensemble_model_dir, ensemble_model_name, output_dir, args):
     """
