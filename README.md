@@ -2,6 +2,8 @@
   <h1>pstage_01_image_classification</h1>
 </div>
 
+![image](https://user-images.githubusercontent.com/51067412/132005400-a4fca0f9-fb9f-4d06-819a-b35e57f02d2a.png)
+
 ## :fire: Getting Started
 ### Dependencies
 - torch==1.6.0
