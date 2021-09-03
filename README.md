@@ -110,8 +110,7 @@ $ python train.py --cv True
 ### Multilabel Classification
 - gender, age, mask 각각 학습
 ```
-$ python train.py \
---multi=True
+$ python train.py --multi=True
 ```
 
 
