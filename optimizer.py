@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 else:
     _params_t = Any
 
-
+# MADGRAD 
 class MADGRAD(torch.optim.Optimizer):
     """
     MADGRAD_: A Momentumized, Adaptive, Dual Averaged Gradient Method for Stochastic
