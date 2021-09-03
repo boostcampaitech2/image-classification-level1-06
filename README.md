@@ -94,7 +94,10 @@ $ python face_image.py
 ```py 
 from sklearn.model_selection import StratifiedKFold
 ```
-`python train.py --cv True`<br>
+```
+$ python train.py --cv True
+```
+<br>
 `train.py` cross_validation 함수
 
 ### Multilabel Classification
