@@ -25,6 +25,7 @@ from dataset import ValidDataset
 from loss import create_criterion
 
 
+# 학습한 모델을 재생산하기 위해 seed를 고정
 def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -35,6 +36,7 @@ def seed_everything(seed):
     random.seed(seed)
 
 
+# train하는 동안 learning rate 얻음(공식처럼 사용됨)
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
@@ -400,6 +402,7 @@ def multi_train(model_dir, args):
         args.name = args.name.split('_')[0]
 
 
+# 학습
 def train(model_dir, args):
     seed_everything(args.seed)
 
