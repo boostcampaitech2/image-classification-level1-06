@@ -56,7 +56,7 @@
 
 ## Dataset Preparation
 ### Prepare Images
-<img width="20" src="https://user-images.githubusercontent.com/68593821/132017683-00687595-ad44-4d91-adda-8ff45f6ba8e5.png">
+<img width="100" src="https://user-images.githubusercontent.com/68593821/132017683-00687595-ad44-4d91-adda-8ff45f6ba8e5.png">
 
 - 전체 사람 수 : 4500명 (train : 2700 | eval : 1800)
 - age : 20대 - 70대
