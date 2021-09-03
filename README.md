@@ -1,4 +1,6 @@
-# pstage_01_image_classification
+<div align="center">
+  # pstage_01_image_classification
+</div>
 
 ## :fire: Getting Started    
 ### Dependencies
