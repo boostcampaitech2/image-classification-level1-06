@@ -12,11 +12,11 @@ IMG_EXTENSIONS = [
     ".PNG", ".ppm", ".PPM", ".bmp", ".BMP",
 ]
 
-
+# file 확장자 추출
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
-
+############################ Data Augmentation ###############################
 class BaseAugmentation:
     def __init__(self, resize, mean, std, **args):
         self.transform = transforms.Compose([
@@ -28,7 +28,7 @@ class BaseAugmentation:
     def __call__(self, image):
         return self.transform(image)
 
-
+# Gaussian Noise 함수
 class AddGaussianNoise(object):
     """
         transform 에 없는 기능들은 이런식으로 __init__, __call__, __repr__ 부분을
@@ -45,7 +45,7 @@ class AddGaussianNoise(object):
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
-
+    
 class TrainAugmentation:
     def __init__(self, resize, mean, std, **args):
         self.transform = transforms.Compose([
@@ -62,7 +62,7 @@ class TrainAugmentation:
     def __call__(self, image):
         return self.transform(image)
 
-
+################################# Dataset ######################################
 class TrainDataset(Dataset):
     def __init__(self, train_df, mean=(0.534, 0.487, 0.459), std=(0.237, 0.243, 0.251), features=False):
         self.mean = mean

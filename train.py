@@ -140,7 +140,7 @@ def cross_validation(model_dir, args, k_folds=5):
     print(f'CV F1-Score: {np.mean(fold_valid_f1_list)}')
 
 
-def cv_train(model_dir, args, train_df, valid_df):
+def cv_train(model_dir, args, train_df, valid_df): # cv=True일 경우 cross validation 실행
     save_dir = increment_path(os.path.join(model_dir, args.name))
 
     # -- settings
@@ -223,7 +223,7 @@ def cv_train(model_dir, args, train_df, valid_df):
         )
     scheduler = CyclicLR(
         optimizer,
-        base_lr=1e-6,
+        base_lr=1e-5,
         max_lr=args.lr,
         step_size_down=len(train_dataset) * 2 // args.batch_size,
         step_size_up=len(train_dataset) // args.batch_size,
@@ -257,13 +257,14 @@ def cv_train(model_dir, args, train_df, valid_df):
                 bbx2 = bbx1 + cut_W
 
                 rand_index = torch.randperm(len(inputs))
-                target_a = labels
-                target_b = labels[rand_index]
+                target_a = labels # 원본 이미지 label
+                target_b = labels[rand_index] # 패치 이미지 label
 
                 inputs[:, :, :, bbx1:bbx2] = inputs[rand_index, :, :, bbx1:bbx2]
                 outs = model(inputs)
-                loss = criterion(outs, target_a) * mix_ratio + criterion(outs, target_b) * (1. - mix_ratio)
-            else:
+                loss = criterion(outs, target_a) * mix_ratio + criterion(outs, target_b) * (1. - mix_ratio)# 패치 이미지와 원본 이미지의 비율에 맞게 loss 계산
+            
+            else: # cutmix가 실행되지 않았을 경우
                 outs = model(inputs)
                 loss = criterion(outs, labels)
 
@@ -502,7 +503,7 @@ def train(model_dir, args):
         )
     scheduler = CyclicLR(
         optimizer,
-        base_lr=1e-6,
+        base_lr=1e-5,
         max_lr=args.lr,
         step_size_down=len(train_dataset) * 2 // args.batch_size,
         step_size_up=len(train_dataset) // args.batch_size,
@@ -666,7 +667,7 @@ if __name__ == '__main__':
 
     # Data and model checkpoints directories
     parser.add_argument('--seed', type=int, default=2021, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=21, help='number of epochs to train (default: 21)')
+    parser.add_argument('--epochs', type=int, default=15, help='number of epochs to train (default: 21)')
     parser.add_argument('--augmentation', type=str, default='TrainAugmentation', help='data augmentation type (default: CustomAugmentation)')
     parser.add_argument("--resize", nargs="+", type=list, default=[280, 210], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=30, help='input batch size for training (default: 30)')

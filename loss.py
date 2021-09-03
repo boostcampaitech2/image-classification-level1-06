@@ -24,7 +24,7 @@ class FocalLoss(nn.Module):
 
 
 class LabelSmoothingLoss(nn.Module):
-    def __init__(self, classes=3, smoothing=0.0, dim=-1):
+    def __init__(self, classes=18, smoothing=0.0, dim=-1):
         super(LabelSmoothingLoss, self).__init__()
         self.confidence = 1.0 - smoothing
         self.smoothing = smoothing
@@ -64,6 +64,7 @@ class F1Loss(nn.Module):
         f1 = f1.clamp(min=self.epsilon, max=1 - self.epsilon)
         return 1 - f1.mean()
 
+# https://www.kaggle.com/c/cassava-leaf-disease-classification/discussion/208239
 class SymmetricCrossEntropyLoss(nn.Module):
     
     def __init__(self, alpha=0.1, beta=1.0, num_classes= 18):

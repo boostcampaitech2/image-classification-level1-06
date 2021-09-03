@@ -221,6 +221,63 @@ def cv_inference(data_dir, model_dir, output_dir, args):
     print(f'Inference Done!')
 
 
+@torch.no_grad()
+def ensemble_inference(data_dir, ensemble_model_dir, ensemble_model_name, output_dir, args):
+    """
+    """
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    num_classes = 18
+
+    fold_preds_list = []
+    for model_dir, model_name in zip(ensemble_model_dir, ensemble_model_name):
+        model_dir = os.path.join('./model', model_dir)
+        model_dir_list = sorted(glob.glob(model_dir + '*'))
+        for model_dir in model_dir_list:
+            model = cv_load_model(model_name, args.pth_name, model_dir, num_classes, device)
+            if model is None:
+                continue
+            model = model.to(device)
+            model.eval()
+
+            img_root = os.path.join(data_dir, 'faces')
+            info_path = os.path.join(data_dir, 'info.csv')
+            info = pd.read_csv(info_path)
+
+            img_paths = [os.path.join(img_root, img_id) for img_id in info.ImageID]
+            test_dataset = TestDataset(img_paths, args.resize)
+
+            test_loader = torch.utils.data.DataLoader(
+                test_dataset,
+                batch_size=args.batch_size,
+                num_workers=4,
+                shuffle=False,
+                pin_memory=use_cuda,
+                drop_last=False,
+            )
+
+            print("Calculating inference results..")
+            preds = []
+            with torch.no_grad():
+                pbar = tqdm(test_loader)
+                for idx, images in enumerate(pbar):
+                    images = images.to(device)
+                    pred = model(images)
+                    # pred = pred.argmax(dim=-1)
+                    preds.extend(pred.cpu().numpy())
+
+            fold_preds_list.append(np.array(preds))
+
+    fold_preds = np.zeros_like(fold_preds_list[0])
+    for preds in fold_preds_list:
+        fold_preds += preds
+    fold_preds = np.argmax(fold_preds, -1)
+    info['ans'] = fold_preds
+    info.to_csv(os.path.join(output_dir, f'output_{args.output_name}.csv'), index=False)
+    print(f'Inference Done!')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -239,22 +296,36 @@ if __name__ == '__main__':
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_CHANNEL_MODEL', ''))
     parser.add_argument('--output_dir', type=str, default=os.environ.get('SM_OUTPUT_DATA_DIR', './output'))
     parser.add_argument('--cv', type=bool, default=False, help='cross validation (default: False)')
-    parser.add_argument('--multi', type=bool, default=False, help='multi train (default: False)')
+
+    parser.add_argument('--multi_label', type=bool, default=False, help='multi label train (default: False)')
+
+    parser.add_argument('--ensemble', type=bool, default=False, help='ensemble (default: False)')
+    parser.add_argument('--ensemble_model_dir', nargs='+', type=str, default=[], help='model_dir for ensemble')
+    parser.add_argument('--ensemble_model_name', nargs='+', type=str, default=[], help='model name for ensemble')
+
 
     args = parser.parse_args()
 
     data_dir = args.data_dir
     model_dir = os.path.join('./model', args.model_dir)
     output_dir = args.output_dir
+    ensemble_model_dir = args.ensemble_model_dir
+    ensemble_model_name = args.ensemble_model_name
 
     os.makedirs(output_dir, exist_ok=True)
 
-    assert args.pth_name, "적용하고자 하는 모델 파라미터를 입력해주세요. cross_validation, multi train 시에는 best 로만 입력해 주세요."
+
+    assert args.pth_name, "적용하고자 하는 모델 파라미터를 입력해주세요. cross_validation & multi label & ensemble 시에는 best 로만 입력해 주세요"
     assert args.output_name, "output 이름을 입력해주세요"
-    assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요. cross_validation 시에는 train 시 name 과 동일"
     if args.cv:
+        assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요. cross_validation & multi label 시에는 train 시 name 과 동일"
         cv_inference(data_dir, model_dir, output_dir, args)
     elif args.multi:
         multi_inference(data_dir, model_dir, output_dir, args)
+    elif args.ensemble:
+        assert args.ensemble_model_dir, "앙상블에 사용할 ./model 하위 폴더명을 공백으로 구분해서 넣어주세요"
+        assert args.ensemble_model_name, "앙상블에 사용할 timm 모델명을 공백으로 구분해서 넣어주세요"
+        ensemble_inference(data_dir, ensemble_model_dir, ensemble_model_name, output_dir, args)
     else:
+        assert args.model_dir, "기본경로로 ./model 이 설정되어 있습니다. 하위 경로를 추가로 입력해주세요. cross_validation & multi label 시에는 train 시 name 과 동일"
         inference(data_dir, model_dir, output_dir, args)
