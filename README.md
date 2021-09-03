@@ -56,7 +56,8 @@
 
 ## :mask: Dataset Preparation
 ### Prepare Images
-<img width="100" src="https://user-images.githubusercontent.com/68593821/132017683-00687595-ad44-4d91-adda-8ff45f6ba8e5.png">
+<img width="1103" alt="스크린샷 2021-09-03 오후 11 05 14" src="https://user-images.githubusercontent.com/68593821/132018480-dcc7ddc0-e019-4797-8b98-72fa97b69856.png">
+<img src="https://kr.freepik.com/free-vector/how-to-wearing-a-face-mask-right-and-wrong-illustrations-with-woman_10422375.htm#&position=2">
 
 - 전체 사람 수 : 4500명 (train : 2700 | eval : 1800)
 - age : 20대 - 70대
