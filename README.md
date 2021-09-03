@@ -117,3 +117,12 @@ $ python inference.py \
   --ensemble=True
 ```
 
+```
+# multilabel inference 시
+$ python inference.py \
+  --model_name={kinds of models} \
+  --model_dir={model_filepath} \
+  --pth_name=best \
+  --output_name={output_filename} \
+  -- multi True
+```
