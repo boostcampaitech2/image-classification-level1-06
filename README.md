@@ -21,9 +21,7 @@
 - `train.py`
 - `inference.py`
 - `evaluation.py`
-- `train_stratified_face.csv` : stratified dataset (train)
-- `valid_stratified_face.csv` : stratified dataset (valid)
-- `perfect_train.csv` : dataset for multilabel classification
+- `perfect_train.csv` : dataset
 
 ### Training
 - `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
