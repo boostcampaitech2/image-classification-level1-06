@@ -94,6 +94,7 @@ $ python face_image.py
   - NFNet_l0
 
 ### Stratified K-fold
+<img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2F3gQO8%2FbtqF0ZOHja8%2FSUTbGTYwVndcUJ5qWusqa0%2Fimg.png">
 ```py 
 from sklearn.model_selection import StratifiedKFold
 ```
