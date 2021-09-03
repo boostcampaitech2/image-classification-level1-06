@@ -73,6 +73,7 @@ def grid_image(np_images, gts, preds, n=16, shuffle=False):
     return figure
 
 
+# 경로
 def increment_path(path, exist_ok=False):
     """ Automatically increment path, i.e. runs/exp --> runs/exp0, runs/exp1 etc.
 
@@ -91,6 +92,7 @@ def increment_path(path, exist_ok=False):
         return f"{path}{n}"
 
 
+# 라벨링
 def labeling(x, df):
     path, sub_label = x['path'], x['sub_label']
     for image_path in glob(os.path.join('/opt/ml/input/data/train/faces', path, '*')):
@@ -101,6 +103,7 @@ def labeling(x, df):
         df.append([image_path, x.age_label, x.gender_label, new_label, label])
 
 
+# 이미지 정보 가져옴
 def get_img_stats(img_paths):
     img_info = dict(means=[], stds=[])
     for img_path in tqdm(img_paths):
@@ -142,7 +145,8 @@ def cross_validation(model_dir, args, k_folds=5):
     print(f'CV F1-Score: {np.mean(fold_valid_f1_list)}')
 
 
-def cv_train(model_dir, args, train_df, valid_df): # cv=True일 경우 cross validation 실행
+# cv=True일 경우 cross validation 실행
+def cv_train(model_dir, args, train_df, valid_df):
     save_dir = increment_path(os.path.join(model_dir, args.name))
 
     # -- settings
@@ -383,6 +387,7 @@ def cv_train(model_dir, args, train_df, valid_df): # cv=True일 경우 cross val
     return best_valid_f1
 
 
+# multi train
 def multi_train(model_dir, args):
     features = ['age', 'gender', 'mask']
     criterions = ['cross_entropy', 'cross_entropy', 'cross_entropy']
