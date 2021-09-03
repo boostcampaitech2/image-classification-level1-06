@@ -29,7 +29,7 @@ def load_model(model_name, pth_name, saved_model, num_classes, device):
     return model
 
 
-# load cv train model from .pth file
+# load cv(multi-labeled) train model from .pth file
 def cv_load_model(model_name, pth_name, saved_model, num_classes, device):
     model_cls = getattr(import_module("model"), args.model)
     model = model_cls(
