@@ -126,10 +126,15 @@ def get_perfect_df():
 def cross_validation(model_dir, args, k_folds=5):
     seed_everything(args.seed)
 
+    # perfect_df : train 이미지에 대한 정확한 라벨링이 된 data frame
+    # sub_label_df : train 2700 명의 대한 age, gender 로만 label 작업 한 data frame
     perfect_df, sub_label_df = get_perfect_df()
 
+    # fold 별 valid_f1 저장할 list
     fold_valid_f1_list = []
+    # age, gender 의 비율을 유지시키면서 cross validation 을 구현할 수 있는 라이브러리 StratifiedKFold
     skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=args.seed)
+    # train index, valid index 를 뱉어줌
     for n_iter, (train_idx, valid_idx) in enumerate(skf.split(sub_label_df, sub_label_df.sub_label), start=1):
         print(f'>> Cross Validation {n_iter} Starts!')
         train_people_path = sub_label_df.iloc[train_idx].people_path.tolist()
@@ -254,6 +259,7 @@ def cv_train(model_dir, args, train_df, valid_df):
         for idx, (inputs, labels) in enumerate(pbar):
             inputs, labels = inputs.to(device), labels.to(device)
 
+            # cutmix 적용 부분
             if np.random.random() <= args.cutmix:
                 W = inputs.shape[2]
                 mix_ratio = np.random.beta(1, 1)
@@ -418,8 +424,10 @@ def train(model_dir, args):
     num_classes = args.num_classes
 
     # -- dataset
-
+    # perfect_df : train 이미지에 대한 정확한 라벨링이 된 data frame
+    # sub_label_df : train 2700 명의 대한 age, gender 로만 label 작업 한 data frame
     perfect_df, sub_label_df = get_perfect_df()
+    # age, gender 를 기준으로 2700명을 8:2 로 train / valid set 으로 분리
     sub_train_df, sub_valid_df = train_test_split(sub_label_df, test_size=0.2,
                                                   stratify=sub_label_df.sub_label, random_state=args.seed)
     train_people_path = sub_train_df.people_path.tolist()
@@ -536,6 +544,7 @@ def train(model_dir, args):
         for idx, (inputs, labels) in enumerate(pbar):
             inputs, labels = inputs.to(device), labels.to(device)
 
+            # cutmix 적용 부분
             if np.random.random() <= args.cutmix:
                 W = inputs.shape[2]
                 mix_ratio = np.random.beta(1, 1)
@@ -709,9 +718,12 @@ if __name__ == '__main__':
     data_dir = args.data_dir
     model_dir = args.model_dir
 
+    # cross_validation 사용
     if args.cv:
         cross_validation(model_dir, args, 5)
+    # multi label classification 사용 (age, gender, mask)
     elif args.multi:
         multi_train(model_dir, args)
+    # basic train
     else:
         train(model_dir, args)
