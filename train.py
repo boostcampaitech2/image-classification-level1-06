@@ -386,16 +386,15 @@ def multi_train(model_dir, args):
     classes = [3, 2, 3]
 
     for feature, criterion, num_classes in zip(features, criterions, classes):
+        print(f"-----{feature}-----")
         args.criterion = criterion
         args.num_classes = num_classes
         args.name = args.name+'_'+feature
         args.features = feature
-        if feature == 'gender' or feature == 'mask':
-            continue
         if args.multi == 1:
             train(model_dir, args)
         elif args.multi == 2:
-            cross_validation(model_dir, args, 3)
+            cross_validation(model_dir, args, 5)
 
         args.name = args.name.split('_')[0]
 
