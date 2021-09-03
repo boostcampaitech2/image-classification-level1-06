@@ -1,5 +1,5 @@
 <div align="center">
-  # pstage_01_image_classification
+  <h1>pstage_01_image_classification</h1>
 </div>
 
 ## :fire: Getting Started    
