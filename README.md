@@ -1,6 +1,6 @@
 # pstage_01_image_classification
 
-## Getting Started    
+## :fire: Getting Started    
 ### Dependencies
 - torch==1.6.0
 - torchvision==0.7.0                                                              
