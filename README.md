@@ -73,6 +73,7 @@
 ```
 $ python face_image.py
 ```
+  - FaceCrop 후 Resize를 거친 크기 : (280, 210)
 
 ### Generate CSV files
 - 'perfect_train.csv'
