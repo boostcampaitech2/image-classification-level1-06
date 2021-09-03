@@ -67,12 +67,13 @@
 - mask, gender, age 기준 18개의 클래스로 분류
 <img src="https://user-images.githubusercontent.com/68593821/131881060-c6d16a84-1138-4a28-b273-418ea487548d.png" height="500"/>
 
-### Facenet
+### [Facenet](https://arxiv.org/pdf/1503.03832.pdf)
  - [face_image.py](https://github.com/boostcampaitech2/image-classification-level1-06/blob/main/face_image.py)
 
 ```
 $ python face_image.py
 ```
+  - FaceNet 이용 얼굴 인식 후 FaceCrop
   - FaceCrop 후 Resize를 거친 이미지 크기 : (280, 210)
 
 ### Generate CSV files
