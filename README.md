@@ -168,4 +168,4 @@ $ python inference.py \
   -- multi True
 ```
 ## 📄 Wrap Up Report
-[Wrap Up Report](https://github.com/boostcampaitech2/image-classification-level1-06/files/7107311/level1_6.pdf)
+[Wrap Up Report](https://github.com/boostcampaitech2/image-classification-level1-06/files/7109084/_level1_6.pdf)
