@@ -104,7 +104,8 @@ $ python face_image.py
 - [NFNet](https://arxiv.org/pdf/2102.06171.pdf)
   - NFNet_l0
 ```
-$ python train.py
+# 단일 모델 train 시
+$ python train.py 
 ```
 
 ### Stratified K-fold
@@ -114,13 +115,14 @@ $ python train.py
 from sklearn.model_selection import StratifiedKFold
 ```
 ```
+# cross_validation 사용해 train 시
 $ python train.py --cv True
 ```
 `train.py` cross_validation 함수
 
 ### Multilabel Classification
-- gender, age, mask 각각 학습
 ```
+# gender, age, mask 각각 학습
 $ python train.py --multi=True
 ```
 
@@ -132,7 +134,7 @@ $ python train.py --multi=True
 $ python inference.py \
   --model_name={kinds of models} \
   --model_dir={model_filepath} \
-  --pth_name={model parameter name (ensemble, cross_validation : best)} \
+  --pth_name={model parameter name} \
   --output_name={output_filename} \
 ```
 
